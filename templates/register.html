@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Register - MindTrack AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="main-content">
+            <div class="text-center mb-4">
+                <div class="feature-icon mx-auto">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h2 class="text-dark">Join MindTrack AI</h2>
+                <p class="text-muted">Start your mental health journey today</p>
+            </div>
+
+            <form id="registerForm">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="firstName" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="lastName" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="form-text">
+                        Password must be at least 8 characters long
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="confirmPassword" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                    <label class="form-check-label" for="agreeTerms">
+                        I agree to the <a href="#" class="text-primary">Terms of Service</a> and 
+                        <a href="#" class="text-primary">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Create Account
+                    </button>
+                </div>
+
+                <div class="text-center">
+                    <p class="text-muted mb-0">
+                        Already have an account? 
+                        <a href="{{ url_for('auth.login') }}" class="text-primary text-decoration-none">Sign in</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#registerForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate password confirmation
+        const password = $('#password').val();
+        const confirmPassword = $('#confirmPassword').val();
+        
+        if (password !== confirmPassword) {
+            const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                'Passwords do not match' +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>');
+            
+            $('.container').prepend(alert);
+            return;
+        }
+        
+        // Validate password length
+        if (password.length < 8) {
+            const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                'Password must be at least 8 characters long' +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>');
+            
+            $('.container').prepend(alert);
+            return;
+        }
+        
+        const formData = {
+            username: $('#username').val(),
+            email: $('#email').val(),
+            password: password,
+            firstName: $('#firstName').val(),
+            lastName: $('#lastName').val()
+        };
+        
+        $.ajax({
+            url: '{{ url_for("auth.register") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                // Show success message
+                const alert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                    response.message + ' Redirecting to login...' +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '</div>');
+                
+                $('.container').prepend(alert);
+                
+                // Redirect to login after a short delay
+                setTimeout(function() {
+                    window.location.href = '{{ url_for("auth.login") }}';
+                }, 2000);
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                    (response.error || 'Registration failed. Please try again.') +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '</div>');
+                
+                $('.container').prepend(alert);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+

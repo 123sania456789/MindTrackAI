@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Login - MindTrack AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="main-content">
+            <div class="text-center mb-4">
+                <div class="feature-icon mx-auto">
+                    <i class="fas fa-sign-in-alt"></i>
+                </div>
+                <h2 class="text-dark">Welcome Back</h2>
+                <p class="text-muted">Sign in to continue your mental health journey</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">
+                        Remember me
+                    </label>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </button>
+                </div>
+
+                <div class="text-center">
+                    <p class="text-muted mb-0">
+                        Don't have an account? 
+                        <a href="{{ url_for('auth.register') }}" class="text-primary text-decoration-none">Sign up</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#loginForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            username: $('#username').val(),
+            password: $('#password').val()
+        };
+        
+        $.ajax({
+            url: '{{ url_for("auth.login") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                // Show success message
+                const alert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                    response.message +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '</div>');
+                
+                $('.container').prepend(alert);
+                
+                // Redirect to dashboard after a short delay
+                setTimeout(function() {
+                    window.location.href = '{{ url_for("dashboard") }}';
+                }, 1500);
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                    (response.error || 'Login failed. Please try again.') +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '</div>');
+                
+                $('.container').prepend(alert);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+

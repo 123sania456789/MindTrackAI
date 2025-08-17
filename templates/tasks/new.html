@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}New Task{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Create New Task</h1>
+        <p class="text-gray-600 mt-2">Stay organized by creating a new task to track.</p>
+    </div>
+
+    <form id="taskForm" class="bg-white rounded-lg shadow-md p-6">
+        <div class="mb-6">
+            <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Task Title *</label>
+            <input type="text" id="title" name="title" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="What needs to be done?">
+        </div>
+
+        <div class="mb-6">
+            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea id="description" name="description" rows="3" 
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Additional details about the task..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                <select id="priority" name="priority" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div>
+                <label for="due_date" class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                <input type="datetime-local" id="due_date" name="due_date"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <div class="flex space-x-4">
+            <button type="submit" 
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                Create Task
+            </button>
+            <a href="{{ url_for('tasks.index') }}" 
+               class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg text-center transition duration-200">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('taskForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const dueDate = formData.get('due_date');
+    
+    const data = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        priority: formData.get('priority'),
+        due_date: dueDate || null
+    };
+    
+    try {
+        const response = await fetch('/tasks/new', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            window.location.href = '/tasks/';
+        } else {
+            const error = await response.json();
+            alert('Error: ' + error.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while creating the task.');
+    }
+});
+</script>
+{% endblock %}

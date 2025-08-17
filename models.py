@@ -1,0 +1,80 @@
+from extensions import db
+from flask_login import UserMixin
+from datetime import datetime
+# Using SQLite instead of PostgreSQL
+
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    journal_entries = db.relationship('JournalEntry', backref='user', lazy=True)
+    mood_entries = db.relationship('MoodEntry', backref='user', lazy=True)
+    tasks = db.relationship('Task', backref='user', lazy=True)
+    goals = db.relationship('Goal', backref='user', lazy=True)
+
+class JournalEntry(db.Model):
+    __tablename__ = 'journal_entries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    mood_score = db.Column(db.Integer)  # 1-10 scale
+    tags = db.Column(db.Text)  # Store as JSON string for SQLite
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # AI Analysis fields
+    sentiment_score = db.Column(db.Float)
+    emotion_labels = db.Column(db.Text)  # Store as JSON string for SQLite
+    key_topics = db.Column(db.Text)  # Store as JSON string for SQLite
+    ai_insights = db.Column(db.Text)
+
+class MoodEntry(db.Model):
+    __tablename__ = 'mood_entries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    mood_score = db.Column(db.Integer, nullable=False)  # 1-10 scale
+    mood_label = db.Column(db.String(50))  # e.g., "Happy", "Sad", "Anxious"
+    notes = db.Column(db.Text)
+    activities = db.Column(db.Text)  # Store as JSON string for SQLite
+    sleep_hours = db.Column(db.Float)
+    exercise_minutes = db.Column(db.Integer)
+    social_interactions = db.Column(db.Integer)  # Number of social interactions
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Task(db.Model):
+    __tablename__ = 'tasks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    priority = db.Column(db.String(20), default='medium')  # low, medium, high
+    status = db.Column(db.String(20), default='pending')  # pending, in_progress, completed
+    due_date = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+
+class Goal(db.Model):
+    __tablename__ = 'goals'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    category = db.Column(db.String(50))  # e.g., "Health", "Career", "Personal"
+    target_date = db.Column(db.Date)
+    progress = db.Column(db.Integer, default=0)  # 0-100 percentage
+    status = db.Column(db.String(20), default='active')  # active, completed, abandoned
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

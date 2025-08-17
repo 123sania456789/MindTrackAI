@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}New Journal Entry - MindTrack AI{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-dark mb-0">
+            <i class="fas fa-pen me-2"></i>New Journal Entry
+        </h1>
+        <a href="{{ url_for('journal.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Journal
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form id="journalForm">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title (Optional)</label>
+                            <input type="text" class="form-control" id="title" name="title" placeholder="Give your entry a title...">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Your Thoughts <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="content" name="content" rows="12" 
+                                      placeholder="Write about your day, thoughts, feelings, or anything on your mind..." required></textarea>
+                            <div class="form-text">
+                                The more you write, the better our AI can understand and analyze your thoughts.
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="moodScore" class="form-label">How are you feeling today?</label>
+                                <select class="form-select" id="moodScore" name="mood_score">
+                                    <option value="">Select mood...</option>
+                                    <option value="1">😢 Very Low (1)</option>
+                                    <option value="2">😔 Low (2)</option>
+                                    <option value="3">😐 Below Average (3)</option>
+                                    <option value="4">😕 Somewhat Low (4)</option>
+                                    <option value="5">😐 Neutral (5)</option>
+                                    <option value="6">🙂 Somewhat Good (6)</option>
+                                    <option value="7">😊 Good (7)</option>
+                                    <option value="8">😄 Very Good (8)</option>
+                                    <option value="9">🤩 Excellent (9)</option>
+                                    <option value="10">🥳 Amazing (10)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tags" class="form-label">Tags (Optional)</label>
+                                <input type="text" class="form-control" id="tags" name="tags" 
+                                       placeholder="work, family, health, goals...">
+                                <div class="form-text">
+                                    Separate tags with commas
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-outline-secondary me-md-2" onclick="clearForm()">
+                                <i class="fas fa-eraser me-2"></i>Clear
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Entry
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Writing Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Write freely without worrying about grammar
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Include both positive and challenging experiences
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Reflect on your emotions and reactions
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Note any patterns you notice
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Be honest with yourself
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-robot me-2"></i>AI Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        After you save your entry, our AI will analyze it to provide:
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-1">
+                            <i class="fas fa-brain text-primary me-2"></i>
+                            Sentiment analysis
+                        </li>
+                        <li class="mb-1">
+                            <i class="fas fa-heart text-primary me-2"></i>
+                            Emotion detection
+                        </li>
+                        <li class="mb-1">
+                            <i class="fas fa-tags text-primary me-2"></i>
+                            Key topics and themes
+                        </li>
+                        <li class="mb-1">
+                            <i class="fas fa-chart-line text-primary me-2"></i>
+                            Mood correlation insights
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#journalForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            title: $('#title').val(),
+            content: $('#content').val(),
+            mood_score: $('#moodScore').val() ? parseInt($('#moodScore').val()) : null,
+            tags: $('#tags').val() ? $('#tags').val().split(',').map(tag => tag.trim()) : []
+        };
+        
+        // Validate content
+        if (!formData.content.trim()) {
+            showAlert('Please write some content for your journal entry.', 'danger');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Saving...');
+        submitBtn.prop('disabled', true);
+        
+        $.ajax({
+            url: '{{ url_for("journal.new_entry") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                showAlert('Journal entry saved successfully! AI analysis is in progress...', 'success');
+                
+                // Redirect to journal index after a delay
+                setTimeout(function() {
+                    window.location.href = '{{ url_for("journal.index") }}';
+                }, 2000);
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                showAlert(response.error || 'Failed to save journal entry. Please try again.', 'danger');
+                
+                // Reset button state
+                submitBtn.html(originalText);
+                submitBtn.prop('disabled', false);
+            }
+        });
+    });
+});
+
+function clearForm() {
+    if (confirm('Are you sure you want to clear the form? All your writing will be lost.')) {
+        $('#journalForm')[0].reset();
+        $('#content').val('');
+    }
+}
+
+function showAlert(message, type) {
+    const alert = $('<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+        message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+        '</div>');
+    
+    $('.container').prepend(alert);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        alert.alert('close');
+    }, 5000);
+}
+</script>
+{% endblock %}
+
+

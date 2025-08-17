@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MindTrack AI{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-dark mb-0">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('journal.new_entry') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>New Journal Entry
+            </a>
+            <a href="{{ url_for('mood.new_entry') }}" class="btn btn-outline-primary">
+                <i class="fas fa-heart me-2"></i>Track Mood
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="text-primary mb-2">
+                        <i class="fas fa-journal-whills fa-2x"></i>
+                    </div>
+                    <h4 class="card-title">{{ journal_entries|length if journal_entries else 0 }}</h4>
+                    <p class="card-text text-muted">Journal Entries</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-heart fa-2x"></i>
+                    </div>
+                    <h4 class="card-title">{{ mood_entries|length if mood_entries else 0 }}</h4>
+                    <p class="card-text text-muted">Mood Records</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="text-warning mb-2">
+                        <i class="fas fa-tasks fa-2x"></i>
+                    </div>
+                    <h4 class="card-title">{{ tasks|length if tasks else 0 }}</h4>
+                    <p class="card-text text-muted">Active Tasks</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="text-info mb-2">
+                        <i class="fas fa-bullseye fa-2x"></i>
+                    </div>
+                    <h4 class="card-title">{{ goals|length if goals else 0 }}</h4>
+                    <p class="card-text text-muted">Active Goals</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Mood Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="moodChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Mood Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="moodPieChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity and Quick Actions -->
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Journal Entries
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if journal_entries %}
+                        {% for entry in journal_entries[:5] %}
+                        <div class="d-flex align-items-start mb-3 pb-3 border-bottom">
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="fas fa-pen text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ entry.title or 'Untitled Entry' }}</h6>
+                                <p class="text-muted mb-1">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</p>
+                                <small class="text-muted">
+                                    {{ entry.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                    {% if entry.mood_score %}
+                                        • Mood: {{ entry.mood_score }}/10
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('journal.view_entry', entry_id=entry.id) }}" class="btn btn-sm btn-outline-primary">
+                                View
+                            </a>
+                        </div>
+                        {% endfor %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('journal.index') }}" class="btn btn-outline-primary">
+                                View All Entries
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-journal-whills fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No journal entries yet</h5>
+                            <p class="text-muted">Start your journey by writing your first journal entry</p>
+                            <a href="{{ url_for('journal.new_entry') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Write First Entry
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('journal.new_entry') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-pen me-2"></i>New Journal Entry
+                        </a>
+                        <a href="{{ url_for('mood.new_entry') }}" class="btn btn-outline-success">
+                            <i class="fas fa-heart me-2"></i>Track Mood
+                        </a>
+                        <a href="{{ url_for('tasks.new_task') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-plus me-2"></i>Add Task
+                        </a>
+                        <a href="{{ url_for('goals.new_goal') }}" class="btn btn-outline-info">
+                            <i class="fas fa-bullseye me-2"></i>Set Goal
+                        </a>
+                        <a href="{{ url_for('ml.insights') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-chart-line me-2"></i>View Insights
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mood Trends Chart
+const moodCtx = document.getElementById('moodChart').getContext('2d');
+const moodChart = new Chart(moodCtx, {
+    type: 'line',
+    data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'Mood Score',
+            data: [7, 6, 8, 7, 9, 8, 7],
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 10,
+                ticks: {
+                    stepSize: 2
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Mood Distribution Pie Chart
+const pieCtx = document.getElementById('moodPieChart').getContext('2d');
+const pieChart = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Happy', 'Calm', 'Anxious', 'Sad', 'Excited'],
+        datasets: [{
+            data: [30, 25, 20, 15, 10],
+            backgroundColor: [
+                '#10b981',
+                '#06b6d4',
+                '#f59e0b',
+                '#ef4444',
+                '#8b5cf6'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+
+

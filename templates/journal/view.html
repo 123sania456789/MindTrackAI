@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}{{ entry.title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="mb-6">
+        <a href="{{ url_for('journal.index') }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Journal
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ entry.title }}</h1>
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                <span>{{ entry.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                {% if entry.updated_at and entry.updated_at != entry.created_at %}
+                <span>• Updated {{ entry.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if entry.mood_score %}
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">
+                    {% if entry.mood_score >= 8 %}😊
+                    {% elif entry.mood_score >= 6 %}🙂
+                    {% elif entry.mood_score >= 4 %}😐
+                    {% elif entry.mood_score >= 2 %}😔
+                    {% else %}😢
+                    {% endif %}
+                </span>
+                <div>
+                    <span class="font-medium text-gray-700">Mood Score: {{ entry.mood_score }}/10</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="prose max-w-none mb-6">
+            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ entry.content }}</p>
+        </div>
+
+        {% if entry.tags %}
+        <div class="mb-6">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Tags</h3>
+            <div class="flex flex-wrap gap-2">
+                {% for tag in entry.tags %}
+                <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ tag }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if entry.sentiment_score or entry.emotion_labels or entry.key_topics or entry.ai_insights %}
+        <div class="border-t pt-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">AI Analysis</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% if entry.sentiment_score %}
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-700 mb-2">Sentiment Analysis</h4>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-lg font-bold {% if entry.sentiment_score > 0 %}text-green-600{% elif entry.sentiment_score < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                            {{ "%.2f"|format(entry.sentiment_score) }}
+                        </span>
+                        <span class="text-sm text-gray-600">
+                            {% if entry.sentiment_score > 0.1 %}Positive
+                            {% elif entry.sentiment_score < -0.1 %}Negative
+                            {% else %}Neutral{% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if entry.emotion_labels %}
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-700 mb-2">Detected Emotions</h4>
+                    <div class="flex flex-wrap gap-2">
+                        {% for emotion in entry.emotion_labels %}
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">{{ emotion }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if entry.key_topics %}
+            <div class="mt-4 bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-2">Key Topics</h4>
+                <div class="flex flex-wrap gap-2">
+                    {% for topic in entry.key_topics %}
+                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">{{ topic }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if entry.ai_insights %}
+            <div class="mt-4 bg-blue-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-2">AI Insights</h4>
+                <p class="text-gray-700 text-sm">{{ entry.ai_insights }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="border-t pt-6 mt-6">
+            <div class="flex space-x-4">
+                <a href="{{ url_for('journal.new_entry') }}" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                    Write New Entry
+                </a>
+                <button onclick="editEntry()" 
+                        class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-200">
+                    Edit Entry
+                </button>
+                <button onclick="deleteEntry()" 
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                    Delete Entry
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function editEntry() {
+    // TODO: Implement edit functionality
+    alert('Edit functionality coming soon!');
+}
+
+function deleteEntry() {
+    if (confirm('Are you sure you want to delete this journal entry? This action cannot be undone.')) {
+        // TODO: Implement delete functionality
+        alert('Delete functionality coming soon!');
+    }
+}
+</script>
+{% endblock %}

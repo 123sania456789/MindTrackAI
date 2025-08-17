@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Journal - MindTrack AI{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-dark mb-0">
+            <i class="fas fa-journal-whills me-2"></i>My Journal
+        </h1>
+        <a href="{{ url_for('journal.new_entry') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>New Entry
+        </a>
+    </div>
+
+    {% if entries %}
+        <div class="row g-4">
+            {% for entry in entries %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">
+                                {{ entry.title or 'Untitled Entry' }}
+                            </h5>
+                            {% if entry.mood_score %}
+                            <span class="badge bg-primary">{{ entry.mood_score }}/10</span>
+                            {% endif %}
+                        </div>
+                        
+                        <p class="card-text text-muted">
+                            {{ entry.content[:150] }}{% if entry.content|length > 150 %}...{% endif %}
+                        </p>
+                        
+                        {% if entry.sentiment_score %}
+                        <div class="mb-2">
+                            <small class="text-muted">Sentiment: </small>
+                            {% if entry.sentiment_score > 0.1 %}
+                                <span class="badge bg-success">Positive</span>
+                            {% elif entry.sentiment_score < -0.1 %}
+                                <span class="badge bg-danger">Negative</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Neutral</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if entry.tags %}
+                        <div class="mb-2">
+                            {% for tag in entry.tags %}
+                            <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {{ entry.created_at.strftime('%B %d, %Y') }}
+                            </small>
+                            <a href="{{ url_for('journal.view_entry', entry_id=entry.id) }}" class="btn btn-sm btn-outline-primary">
+                                Read More
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-journal-whills fa-4x text-muted mb-4"></i>
+            <h3 class="text-muted mb-3">No journal entries yet</h3>
+            <p class="text-muted mb-4">
+                Start your mental health journey by writing your first journal entry. 
+                Our AI will analyze your thoughts and provide insights.
+            </p>
+            <a href="{{ url_for('journal.new_entry') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Write Your First Entry
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
