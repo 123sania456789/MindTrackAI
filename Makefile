@@ -1,9 +1,16 @@
-.PHONY: help install run test clean docker-up docker-down docker-build logs
+.PHONY: help install run test clean docker-build docker-run
 
-help: ## Show this help message
-	@echo "MindTrack AI - Available Commands:"
+help:
+	@echo "AI Powered Mental Health and Personalized Recommendation System - Available Commands:"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo "  install      - Install dependencies"
+	@echo "  run          - Run the application"
+	@echo "  test         - Run tests"
+	@echo "  clean        - Clean up generated files"
+	@echo "  docker-build - Build Docker image"
+	@echo "  docker-run   - Run Docker container"
+	@echo ""
+	@echo "For more information, see README.md"
 
 install: ## Install Python dependencies
 	pip install -r requirements.txt
@@ -37,7 +44,7 @@ logs: ## View application logs
 	tail -f logs/mindtrack_ai.log
 
 setup: ## Initial setup for development
-	@echo "Setting up MindTrack AI development environment..."
+	@echo "Setting up AI Powered Mental Health and Personalized Recommendation System development environment..."
 	@echo "1. Installing dependencies..."
 	$(MAKE) install
 	@echo "2. Creating necessary directories..."
@@ -88,5 +95,6 @@ reset: ## Reset database and start fresh
 	else \
 		echo "Reset cancelled"; \
 	fi
+
 
 

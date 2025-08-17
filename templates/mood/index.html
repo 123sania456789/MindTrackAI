@@ -1,88 +1,604 @@
 {% extends "base.html" %}
 
-{% block title %}Mood Tracking{% endblock %}
+{% block title %}Mood Tracking - AI Powered Mental Health and Personalized Recommendation System{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Mood Tracking</h1>
-        <a href="{{ url_for('mood.new_entry') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Add New Entry
+<div class="main-content">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 text-dark mb-1">
+                <i class="fas fa-heart text-primary me-2"></i>Mood Tracking
+            </h1>
+            <p class="text-muted mb-0">Track your emotional journey and discover patterns</p>
+        </div>
+        <a href="{{ url_for('mood.new_entry') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus me-2"></i>Track New Mood
         </a>
     </div>
 
-    {% if entries %}
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {% for entry in entries %}
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                    <span class="text-2xl">
-                        {% if entry.mood_score >= 8 %}😊
-                        {% elif entry.mood_score >= 6 %}🙂
-                        {% elif entry.mood_score >= 4 %}😐
-                        {% elif entry.mood_score >= 2 %}😔
-                        {% else %}😢
-                        {% endif %}
-                    </span>
-                    <span class="text-lg font-semibold text-gray-800">{{ entry.mood_label or 'Mood' }}</span>
+    <!-- Mood Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-line fa-3x opacity-75"></i>
+                    </div>
+                    <h3 class="card-title mb-1">{{ entries|length }}</h3>
+                    <p class="card-text opacity-90">Total Entries</p>
                 </div>
-                <span class="text-2xl font-bold text-blue-600">{{ entry.mood_score }}/10</span>
-            </div>
-            
-            {% if entry.notes %}
-            <p class="text-gray-600 mb-4">{{ entry.notes }}</p>
-            {% endif %}
-            
-            <div class="space-y-2 text-sm text-gray-500">
-                {% if entry.sleep_hours %}
-                <div class="flex justify-between">
-                    <span>Sleep:</span>
-                    <span>{{ entry.sleep_hours }} hours</span>
-                </div>
-                {% endif %}
-                
-                {% if entry.exercise_minutes %}
-                <div class="flex justify-between">
-                    <span>Exercise:</span>
-                    <span>{{ entry.exercise_minutes }} minutes</span>
-                </div>
-                {% endif %}
-                
-                {% if entry.social_interactions %}
-                <div class="flex justify-between">
-                    <span>Social:</span>
-                    <span>{{ entry.social_interactions }} interactions</span>
-                </div>
-                {% endif %}
-            </div>
-            
-            {% if entry.activities %}
-            <div class="mt-4">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">Activities:</h4>
-                <div class="flex flex-wrap gap-2">
-                    {% for activity in entry.activities|from_json %}
-                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{{ activity }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-            
-            <div class="mt-4 text-xs text-gray-400">
-                {{ entry.created_at.strftime('%B %d, %Y at %I:%M %p') }}
             </div>
         </div>
-        {% endfor %}
+        <div class="col-md-3">
+            <div class="card bg-gradient-success text-white">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-day fa-3x opacity-75"></i>
+                    </div>
+                    <h3 class="card-title mb-1">{{ entries|selectattr('created_at', 'ge', (moment().subtract(7, 'days').toDate()))|list|length }}</h3>
+                    <p class="card-text opacity-90">This Week</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-info text-white">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-moon fa-3x opacity-75"></i>
+                    </div>
+                    <h3 class="card-title mb-1">
+                        {% set sleep_entries = entries|selectattr('sleep_hours')|list %}
+                        {% if sleep_entries %}
+                            {{ "%.1f"|format(sleep_entries|map(attribute='sleep_hours')|sum / sleep_entries|length) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </h3>
+                    <p class="card-text opacity-90">Avg Sleep (hrs)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-warning text-white">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-dumbbell fa-3x opacity-75"></i>
+                    </div>
+                    <h3 class="card-title mb-1">
+                        {% set exercise_entries = entries|selectattr('exercise_minutes')|list %}
+                        {% if exercise_entries %}
+                            {{ "%.0f"|format(exercise_entries|map(attribute='exercise_minutes')|sum / exercise_entries|length) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </h3>
+                    <p class="card-text opacity-90">Avg Exercise (min)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mood Trends Chart -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-area me-2"></i>Mood Trends Over Time
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="moodTrendChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Mood Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="moodDistributionChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mood Entries Grid -->
+    {% if entries %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>Your Mood Journey
+            </h5>
+            <div class="d-flex gap-2">
+                <select class="form-select form-select-sm" id="moodFilter" style="width: auto;">
+                    <option value="">All Moods</option>
+                    <option value="8-10">Happy (8-10)</option>
+                    <option value="6-7">Good (6-7)</option>
+                    <option value="4-5">Neutral (4-5)</option>
+                    <option value="2-3">Low (2-3)</option>
+                    <option value="1">Very Low (1)</option>
+                </select>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleView()">
+                    <i class="fas fa-th-large me-1"></i>Toggle View
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="moodGrid" class="row g-3">
+                {% for entry in entries %}
+                <div class="col-md-6 col-lg-4 mood-entry" data-mood-score="{{ entry.mood_score }}">
+                    <div class="card h-100 mood-card" data-mood="{{ entry.mood_score }}">
+                        <div class="card-body">
+                            <!-- Mood Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="mood-emoji me-2">
+                                        {% if entry.mood_score >= 8 %}😊
+                                        {% elif entry.mood_score >= 6 %}🙂
+                                        {% elif entry.mood_score >= 4 %}😐
+                                        {% elif entry.mood_score >= 2 %}😔
+                                        {% else %}😢
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h6 class="card-title mb-0">{{ entry.mood_label or 'Mood Entry' }}</h6>
+                                        <small class="text-muted">{{ entry.created_at.strftime('%b %d, %Y') }}</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-primary fs-6">{{ entry.mood_score }}/10</span>
+                                    <div class="text-muted small">{{ entry.created_at.strftime('%I:%M %p') }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Mood Notes -->
+                            {% if entry.notes %}
+                            <p class="card-text mb-3">{{ entry.notes }}</p>
+                            {% endif %}
+
+                            <!-- Activity Indicators -->
+                            <div class="row g-2 mb-3">
+                                {% if entry.sleep_hours %}
+                                <div class="col-4">
+                                    <div class="text-center p-2 bg-light rounded">
+                                        <i class="fas fa-moon text-info mb-1"></i>
+                                        <div class="small text-muted">{{ entry.sleep_hours }}h</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if entry.exercise_minutes %}
+                                <div class="col-4">
+                                    <div class="text-center p-2 bg-light rounded">
+                                        <i class="fas fa-dumbbell text-success mb-1"></i>
+                                        <div class="small text-muted">{{ entry.exercise_minutes }}m</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if entry.social_interactions %}
+                                <div class="col-4">
+                                    <div class="text-center p-2 bg-light rounded">
+                                        <i class="fas fa-users text-primary mb-1"></i>
+                                        <div class="small text-muted">{{ entry.social_interactions }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Activities Tags -->
+                            {% if entry.activities %}
+                            <div class="mb-3">
+                                <h6 class="small text-muted mb-2">Activities:</h6>
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for activity in entry.activities|from_json %}
+                                    <span class="badge bg-light text-dark">{{ activity }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Mood Insights -->
+                            <div class="mood-insights mt-3 p-2 bg-light rounded">
+                                <small class="text-muted">
+                                    {% if entry.mood_score >= 8 %}
+                                        🌟 Great day! Keep up the positive energy!
+                                    {% elif entry.mood_score >= 6 %}
+                                        👍 Good mood! You're doing well.
+                                    {% elif entry.mood_score >= 4 %}
+                                        🤔 Neutral day. Consider what might help.
+                                    {% elif entry.mood_score >= 2 %}
+                                        💙 Tough day. Remember, it's okay to not be okay.
+                                    {% else %}
+                                        💜 Difficult time. Consider reaching out for support.
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
     {% else %}
-    <div class="text-center py-12">
-        <div class="text-6xl mb-4">📊</div>
-        <h3 class="text-xl font-semibold text-gray-600 mb-2">No mood entries yet</h3>
-        <p class="text-gray-500 mb-6">Start tracking your mood to see patterns and insights</p>
-        <a href="{{ url_for('mood.new_entry') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
-            Track Your First Mood
-        </a>
+    <!-- Empty State -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-heart-broken fa-5x text-muted opacity-50"></i>
+            </div>
+            <h3 class="text-muted mb-3">No mood entries yet</h3>
+            <p class="text-muted mb-4">Start tracking your mood to discover patterns and insights about your emotional well-being</p>
+            <a href="{{ url_for('mood.new_entry') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Track Your First Mood
+            </a>
+        </div>
     </div>
     {% endif %}
 </div>
+
+<!-- Mood Analysis Modal -->
+<div class="modal fade" id="moodAnalysisModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-line me-2"></i>Mood Analysis
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="moodAnalysisContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mood Trend Chart
+const moodTrendCtx = document.getElementById('moodTrendChart').getContext('2d');
+const moodTrendChart = new Chart(moodTrendCtx, {
+    type: 'line',
+    data: {
+        labels: {{ entries|map(attribute='created_at.strftime', '%m/%d')|list|tojson }},
+        datasets: [{
+            label: 'Mood Score',
+            data: {{ entries|map(attribute='mood_score')|list|tojson }},
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#6366f1',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 10,
+                ticks: {
+                    stepSize: 2
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                borderColor: '#6366f1',
+                borderWidth: 1
+            }
+        }
+    }
+});
+
+// Mood Distribution Chart
+const moodDistributionCtx = document.getElementById('moodDistributionChart').getContext('2d');
+const moodLabels = ['Happy (8-10)', 'Good (6-7)', 'Neutral (4-5)', 'Low (2-3)', 'Very Low (1)'];
+const moodData = [0, 0, 0, 0, 0];
+
+// Calculate mood distribution
+{% for entry in entries %}
+    {% if entry.mood_score >= 8 %}
+        moodData[0]++;
+    {% elif entry.mood_score >= 6 %}
+        moodData[1]++;
+    {% elif entry.mood_score >= 4 %}
+        moodData[2]++;
+    {% elif entry.mood_score >= 2 %}
+        moodData[3]++;
+    {% else %}
+        moodData[4]++;
+    {% endif %}
+{% endfor %}
+
+const moodDistributionChart = new Chart(moodDistributionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: moodLabels,
+        datasets: [{
+            data: moodData,
+            backgroundColor: [
+                '#10b981',
+                '#06b6d4',
+                '#f59e0b',
+                '#f97316',
+                '#ef4444'
+            ],
+            borderWidth: 0,
+            hoverOffset: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true,
+                    font: {
+                        size: 11
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Mood filtering
+document.getElementById('moodFilter').addEventListener('change', function() {
+    const filterValue = this.value;
+    const entries = document.querySelectorAll('.mood-entry');
+    
+    entries.forEach(entry => {
+        const moodScore = parseInt(entry.dataset.moodScore);
+        let show = true;
+        
+        if (filterValue) {
+            const [min, max] = filterValue.split('-').map(Number);
+            if (max) {
+                show = moodScore >= min && moodScore <= max;
+            } else {
+                show = moodScore === min;
+            }
+        }
+        
+        entry.style.display = show ? 'block' : 'none';
+    });
+});
+
+// Toggle view between grid and list
+let isGridView = true;
+function toggleView() {
+    const grid = document.getElementById('moodGrid');
+    const button = event.target;
+    
+    if (isGridView) {
+        grid.classList.remove('row');
+        grid.classList.add('list-view');
+        button.innerHTML = '<i class="fas fa-th me-1"></i>Grid View';
+    } else {
+        grid.classList.remove('list-view');
+        grid.classList.add('row');
+        button.innerHTML = '<i class="fas fa-th-large me-1"></i>Toggle View';
+    }
+    
+    isGridView = !isGridView;
+}
+
+// Add hover effects to mood cards
+document.addEventListener('DOMContentLoaded', function() {
+    const moodCards = document.querySelectorAll('.mood-card');
+    
+    moodCards.forEach(card => {
+        const moodScore = parseInt(card.dataset.mood);
+        
+        // Add hover effects
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+        
+        // Add click to show detailed analysis
+        card.addEventListener('click', function() {
+            showMoodAnalysis(moodScore);
+        });
+    });
+});
+
+// Show mood analysis modal
+function showMoodAnalysis(moodScore) {
+    const modal = new bootstrap.Modal(document.getElementById('moodAnalysisModal'));
+    const content = document.getElementById('moodAnalysisContent');
+    
+    let analysis = '';
+    if (moodScore >= 8) {
+        analysis = `
+            <div class="text-center mb-4">
+                <div class="display-1 mb-3">😊</div>
+                <h4 class="text-success">Excellent Mood!</h4>
+                <p class="text-muted">You're experiencing high positive energy</p>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>What's Working Well:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Positive mindset</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Good energy levels</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Motivation is high</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Suggestions:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Channel this energy into goals</li>
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Help others who might be struggling</li>
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Document what led to this mood</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    } else if (moodScore >= 6) {
+        analysis = `
+            <div class="text-center mb-4">
+                <div class="display-1 mb-3">🙂</div>
+                <h4 class="text-info">Good Mood</h4>
+                <p class="text-muted">You're in a positive state of mind</p>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Current State:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Stable emotional state</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Productive mindset</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Good social connections</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Enhancement Tips:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Try new activities</li>
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Set small goals</li>
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Practice gratitude</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    } else if (moodScore >= 4) {
+        analysis = `
+            <div class="text-center mb-4">
+                <div class="display-1 mb-3">😐</div>
+                <h4 class="text-warning">Neutral Mood</h4>
+                <p class="text-muted">You're in a balanced but neutral state</p>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Understanding:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-info text-info me-2"></i>Normal emotional fluctuation</li>
+                        <li><i class="fas fa-info text-info me-2"></i>Time for self-reflection</li>
+                        <li><i class="fas fa-info text-info me-2"></i>Opportunity for growth</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Action Steps:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Identify what you need</li>
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Try gentle self-care</li>
+                        <li><i class="fas fa-lightbulb text-warning me-2"></i>Reach out to friends</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    } else {
+        analysis = `
+            <div class="text-center mb-4">
+                <div class="display-1 mb-3">💙</div>
+                <h4 class="text-danger">Low Mood</h4>
+                <p class="text-muted">You're going through a difficult time</p>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Remember:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-heart text-danger me-2"></i>It's okay to not be okay</li>
+                        <li><i class="fas fa-heart text-danger me-2"></i>This feeling is temporary</li>
+                        <li><i class="fas fa-heart text-danger me-2"></i>You're not alone</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Support Options:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-phone text-primary me-2"></i>Talk to someone you trust</li>
+                        <li><i class="fas fa-user-md text-primary me-2"></i>Consider professional help</li>
+                        <li><i class="fas fa-heart text-primary me-2"></i>Practice self-compassion</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = analysis;
+    modal.show();
+}
+</script>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.mood-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.mood-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.mood-emoji {
+    font-size: 2rem;
+}
+
+.mood-insights {
+    border-left: 3px solid #6366f1;
+}
+
+.list-view .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+
+.list-view .mood-card {
+    margin-bottom: 1rem;
+}
+
+.opacity-75 {
+    opacity: 0.75;
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+</style>
 {% endblock %}

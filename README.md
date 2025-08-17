@@ -1,6 +1,6 @@
-# MindTrack AI 🧠
+# AI Powered Mental Health and Personalized Recommendation System 🧠
 
-A full-stack web application that combines advanced machine learning with intuitive journaling to help users understand their mental health patterns, track their mood, and gain valuable insights about themselves.
+An intelligent mental health tracking and analysis platform that combines advanced AI with personalized recommendations to help users understand and improve their mental well-being.
 
 ## ✨ Features
 
@@ -45,8 +45,8 @@ A full-stack web application that combines advanced machine learning with intuit
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/mindtrack-ai.git
-   cd mindtrack-ai
+   git clone https://github.com/yourusername/ai-mental-health.git
+   cd ai-mental-health
    ```
 
 2. **Set up environment variables**
@@ -106,26 +106,20 @@ A full-stack web application that combines advanced machine learning with intuit
    celery -A ml_services.celery_app worker --loglevel=info
    ```
 
-## 📁 Project Structure
+## 🏗️ Project Structure
 
 ```
-mindtrack-ai/
+ai-mental-health/
 ├── app.py                 # Main Flask application
-├── models.py             # Database models
-├── routes.py             # Route blueprints
-├── ml_services.py        # Machine learning services
-├── celery_config.py      # Celery configuration
-├── requirements.txt      # Python dependencies
-├── docker-compose.yml    # Docker services
-├── Dockerfile           # Application container
-├── templates/           # HTML templates
-│   ├── base.html       # Base template
-│   ├── index.html      # Landing page
-│   ├── dashboard.html  # User dashboard
-│   ├── login.html      # Login form
-│   └── register.html   # Registration form
-├── static/             # Static files (CSS, JS, images)
-└── logs/              # Application logs
+├── models.py              # Database models
+├── routes.py              # Route definitions
+├── extensions.py          # Flask extensions
+├── ml_services.py         # ML model services
+├── templates/             # HTML templates
+├── static/                # CSS, JS, images
+├── requirements.txt       # Python dependencies
+├── docker-compose.yml     # Docker services
+└── README.md             # This file
 ```
 
 ## 🔧 Configuration
@@ -257,15 +251,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Bootstrap**: UI framework
 - **Chart.js**: Data visualization
 
-## 📞 Support
+## 📞 Support & Contact
 
-For support and questions:
-- Create an issue on GitHub
-- Contact: support@mindtrack-ai.com
-- Documentation: https://docs.mindtrack-ai.com
+- **Email**: support@ai-mental-health.com
+- **Documentation**: https://docs.ai-mental-health.com
+- **Issues**: [GitHub Issues](https://github.com/yourusername/ai-mental-health/issues)
 
 ---
 
-**MindTrack AI** - Track Your Mind, Understand Your Soul 🧠✨
+**AI Powered Mental Health and Personalized Recommendation System** - Track Your Mind, Understand Your Soul 🧠✨
+
+Built with ❤️ for better mental health awareness and support.
+
 
 

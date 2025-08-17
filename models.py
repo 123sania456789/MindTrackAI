@@ -1,6 +1,6 @@
 from extensions import db
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timezone
 # Using SQLite instead of PostgreSQL
 
 class User(UserMixin, db.Model):
@@ -10,7 +10,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     last_login = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)
     
@@ -29,8 +29,8 @@ class JournalEntry(db.Model):
     content = db.Column(db.Text, nullable=False)
     mood_score = db.Column(db.Integer)  # 1-10 scale
     tags = db.Column(db.Text)  # Store as JSON string for SQLite
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # AI Analysis fields
     sentiment_score = db.Column(db.Float)
@@ -50,7 +50,7 @@ class MoodEntry(db.Model):
     sleep_hours = db.Column(db.Float)
     exercise_minutes = db.Column(db.Integer)
     social_interactions = db.Column(db.Integer)  # Number of social interactions
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Task(db.Model):
     __tablename__ = 'tasks'
@@ -62,7 +62,7 @@ class Task(db.Model):
     priority = db.Column(db.String(20), default='medium')  # low, medium, high
     status = db.Column(db.String(20), default='pending')  # pending, in_progress, completed
     due_date = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = db.Column(db.DateTime)
 
 class Goal(db.Model):
@@ -76,5 +76,5 @@ class Goal(db.Model):
     target_date = db.Column(db.Date)
     progress = db.Column(db.Integer, default=0)  # 0-100 percentage
     status = db.Column(db.String(20), default='active')  # active, completed, abandoned
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

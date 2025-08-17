@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-MindTrack AI Startup Script
-Initializes the database and starts the Flask application
+AI Powered Mental Health Prediction and Personalized Assistance System Startup Script
 """
 
 import os
 import sys
 from app import app, db
-from models import User, JournalEntry, MoodEntry, Task, Goal, MLModel
+from models import User, JournalEntry, MoodEntry, Task, Goal
+from sqlalchemy import text
 
 def init_database():
     """Initialize the database with tables"""
@@ -25,47 +25,14 @@ def init_database():
                 from werkzeug.security import generate_password_hash
                 admin_user = User(
                     username='admin',
-                    email='admin@mindtrack-ai.com',
-                    password_hash=generate_password_hash('admin123'),
-                    first_name='Admin',
-                    last_name='User'
+                    email='admin@ai-mental-health.com',
+                    password_hash=generate_password_hash('admin123')
                 )
                 db.session.add(admin_user)
                 db.session.commit()
                 print("✅ Admin user created (username: admin, password: admin123)")
             
-            # Check if ML model records exist
-            if not MLModel.query.first():
-                # Create default ML model records
-                models = [
-                    MLModel(
-                        name='sentiment_analysis',
-                        version='1.0.0',
-                        model_type='sentiment',
-                        accuracy=0.85,
-                        is_active=True
-                    ),
-                    MLModel(
-                        name='emotion_detection',
-                        version='1.0.0',
-                        model_type='emotion',
-                        accuracy=0.78,
-                        is_active=True
-                    ),
-                    MLModel(
-                        name='topic_modeling',
-                        version='1.0.0',
-                        model_type='topic_modeling',
-                        accuracy=0.82,
-                        is_active=True
-                    )
-                ]
-                
-                for model in models:
-                    db.session.add(model)
-                
-                db.session.commit()
-                print("✅ ML model records created")
+
             
             print("🎉 Database initialization complete!")
             
@@ -79,32 +46,20 @@ def check_dependencies():
     """Check if required services are available"""
     print("🔍 Checking dependencies...")
     
-    # Check PostgreSQL connection
+    # Check SQLite database
     try:
         with app.app_context():
-            db.engine.execute('SELECT 1')
-            print("✅ PostgreSQL connection successful")
+            db.session.execute(text('SELECT 1'))
+            print("✅ SQLite database connection successful")
     except Exception as e:
-        print(f"❌ PostgreSQL connection failed: {e}")
-        print("   Make sure PostgreSQL is running and accessible")
-        return False
-    
-    # Check Redis connection
-    try:
-        import redis
-        redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
-        redis_client.ping()
-        print("✅ Redis connection successful")
-    except Exception as e:
-        print(f"❌ Redis connection failed: {e}")
-        print("   Make sure Redis is running and accessible")
+        print(f"❌ Database connection failed: {e}")
         return False
     
     return True
 
 def main():
     """Main startup function"""
-    print("🚀 MindTrack AI Startup")
+    print("🚀 AI Powered Mental Health Prediction and Personalized Assistance System Startup")
     print("=" * 50)
     
     # Check dependencies
@@ -117,7 +72,7 @@ def main():
         print("\n❌ Database initialization failed.")
         sys.exit(1)
     
-    print("\n🎯 Starting MindTrack AI...")
+    print("\n🎯 Starting AI Powered Mental Health Prediction and Personalized Assistance System...")
     print("📱 Web application will be available at: http://localhost:5000")
     print("🔑 Admin login: admin / admin123")
     print("\n💡 To stop the application, press Ctrl+C")
@@ -127,12 +82,13 @@ def main():
     try:
         app.run(host='0.0.0.0', port=5000, debug=True)
     except KeyboardInterrupt:
-        print("\n\n👋 MindTrack AI stopped. Goodbye!")
+        print("\n\n👋 AI Powered Mental Health Prediction and Personalized Assistance System stopped. Goodbye!")
     except Exception as e:
         print(f"\n❌ Error starting application: {e}")
         sys.exit(1)
 
 if __name__ == '__main__':
     main()
+
 
 

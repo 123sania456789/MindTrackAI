@@ -235,4 +235,131 @@ def sentiment_analysis():
     
     return jsonify(result)
 
+# Doctor Recommendations Blueprint
+doctors_bp = Blueprint('doctors', __name__, url_prefix='/doctors')
+
+@doctors_bp.route('/')
+@login_required
+def index():
+    """Show doctor recommendations page"""
+    return render_template('doctors/index.html')
+
+@doctors_bp.route('/search')
+@login_required
+def search_doctors():
+    """Search for doctors based on criteria"""
+    specialty = request.args.get('specialty', '')
+    location = request.args.get('location', '')
+    
+    # Mock doctor data - in production, this would integrate with real APIs
+    mock_doctors = [
+        {
+            'id': 1,
+            'name': 'Dr. Sarah Johnson',
+            'specialty': 'Psychiatrist',
+            'subspecialty': 'Depression & Anxiety',
+            'distance': '0.5 miles',
+            'rating': 4.8,
+            'review_count': 127,
+            'address': '123 Main St, City, State 12345',
+            'phone': '(555) 123-4567',
+            'email': 'dr.johnson@example.com',
+            'available': True,
+            'next_available': 'Tomorrow 2:00 PM',
+            'accepts_insurance': True,
+            'languages': ['English', 'Spanish'],
+            'years_experience': 15,
+            'education': 'Harvard Medical School',
+            'certifications': ['Board Certified Psychiatrist', 'Fellow of American Psychiatric Association']
+        },
+        {
+            'id': 2,
+            'name': 'Dr. Michael Chen',
+            'specialty': 'Psychologist',
+            'subspecialty': 'Cognitive Behavioral Therapy',
+            'distance': '1.2 miles',
+            'rating': 4.6,
+            'review_count': 89,
+            'address': '456 Oak Ave, City, State 12345',
+            'phone': '(555) 234-5678',
+            'email': 'dr.chen@example.com',
+            'available': True,
+            'next_available': 'Today 4:00 PM',
+            'accepts_insurance': True,
+            'languages': ['English', 'Mandarin'],
+            'years_experience': 12,
+            'education': 'Stanford University',
+            'certifications': ['Licensed Clinical Psychologist', 'CBT Specialist']
+        },
+        {
+            'id': 3,
+            'name': 'Dr. Emily Rodriguez',
+            'specialty': 'Therapist',
+            'subspecialty': 'Trauma & PTSD',
+            'distance': '2.1 miles',
+            'rating': 4.9,
+            'review_count': 203,
+            'address': '789 Pine Rd, City, State 12345',
+            'phone': '(555) 345-6789',
+            'email': 'dr.rodriguez@example.com',
+            'available': False,
+            'next_available': 'Next Week',
+            'accepts_insurance': False,
+            'languages': ['English', 'Spanish'],
+            'years_experience': 8,
+            'education': 'UCLA',
+            'certifications': ['Licensed Marriage and Family Therapist', 'EMDR Certified']
+        },
+        {
+            'id': 4,
+            'name': 'Dr. James Wilson',
+            'specialty': 'Psychiatrist',
+            'subspecialty': 'Bipolar Disorder',
+            'distance': '3.2 miles',
+            'rating': 4.7,
+            'review_count': 156,
+            'address': '321 Elm St, City, State 12345',
+            'phone': '(555) 456-7890',
+            'email': 'dr.wilson@example.com',
+            'available': True,
+            'next_available': 'Today 6:00 PM',
+            'accepts_insurance': True,
+            'languages': ['English'],
+            'years_experience': 20,
+            'education': 'Johns Hopkins University',
+            'certifications': ['Board Certified Psychiatrist', 'Mood Disorders Specialist']
+        }
+    ]
+    
+    # Filter by specialty if provided
+    if specialty:
+        mock_doctors = [d for d in mock_doctors if specialty.lower() in d['specialty'].lower()]
+    
+    return jsonify(mock_doctors)
+
+@doctors_bp.route('/<int:doctor_id>')
+@login_required
+def doctor_detail(doctor_id):
+    """Show detailed information about a specific doctor"""
+    # In production, this would fetch from a database or API
+    return render_template('doctors/detail.html', doctor_id=doctor_id)
+
+@doctors_bp.route('/appointment', methods=['POST'])
+@login_required
+def book_appointment():
+    """Book an appointment with a doctor"""
+    data = request.get_json()
+    doctor_id = data.get('doctor_id')
+    appointment_date = data.get('appointment_date')
+    appointment_time = data.get('appointment_time')
+    reason = data.get('reason')
+    
+    # In production, this would create an appointment record
+    # For now, just return success
+    return jsonify({
+        'message': 'Appointment request submitted successfully',
+        'appointment_id': 12345,
+        'status': 'pending_confirmation'
+    }), 201
+
 

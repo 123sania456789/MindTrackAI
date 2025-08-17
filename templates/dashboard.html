@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - MindTrack AI{% endblock %}
+{% block title %}Dashboard - AI Powered Mental Health Prediction and Personalized Assistance System{% endblock %}
 
 {% block content %}
 <div class="main-content">
@@ -26,7 +26,7 @@
                     <div class="text-primary mb-2">
                         <i class="fas fa-journal-whills fa-2x"></i>
                     </div>
-                    <h4 class="card-title">{{ journal_entries|length if journal_entries else 0 }}</h4>
+                    <h4 class="card-title">{{ total_journals }}</h4>
                     <p class="card-text text-muted">Journal Entries</p>
                 </div>
             </div>
@@ -37,7 +37,7 @@
                     <div class="text-success mb-2">
                         <i class="fas fa-heart fa-2x"></i>
                     </div>
-                    <h4 class="card-title">{{ mood_entries|length if mood_entries else 0 }}</h4>
+                    <h4 class="card-title">{{ total_moods }}</h4>
                     <p class="card-text text-muted">Mood Records</p>
                 </div>
             </div>
@@ -48,7 +48,7 @@
                     <div class="text-warning mb-2">
                         <i class="fas fa-tasks fa-2x"></i>
                     </div>
-                    <h4 class="card-title">{{ tasks|length if tasks else 0 }}</h4>
+                    <h4 class="card-title">{{ active_tasks }}</h4>
                     <p class="card-text text-muted">Active Tasks</p>
                 </div>
             </div>
@@ -59,8 +59,72 @@
                     <div class="text-info mb-2">
                         <i class="fas fa-bullseye fa-2x"></i>
                     </div>
-                    <h4 class="card-title">{{ goals|length if goals else 0 }}</h4>
+                    <h4 class="card-title">{{ active_goals }}</h4>
                     <p class="card-text text-muted">Active Goals</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations Section -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>Personalized Recommendations
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="refreshRecommendations()">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if recommendations and recommendations|length > 0 %}
+                        <div class="row g-3">
+                            {% for rec in recommendations %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card border-{{ rec.color }} h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start mb-2">
+                                            <div class="text-{{ rec.color }} me-2">
+                                                <i class="{{ rec.icon }} fa-lg"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="card-title mb-1">{{ rec.title }}</h6>
+                                                <span class="badge bg-{{ rec.color }}">{{ rec.priority|title }}</span>
+                                            </div>
+                                        </div>
+                                        <p class="card-text small">{{ rec.description }}</p>
+                                        <button class="btn btn-sm btn-outline-{{ rec.color }}" onclick="handleRecommendation('{{ rec.type }}', '{{ rec.action }}')">
+                                            {{ rec.action }}
+                                        </button>
+                                        {% if rec.type == 'mood' and rec.action == 'Find nearby therapists' %}
+                                        <div class="mt-2">
+                                            <a href="{{ url_for('doctors.index') }}" class="btn btn-sm btn-{{ rec.color }}">
+                                                <i class="fas fa-search me-1"></i>Browse All Professionals
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No recommendations yet</h5>
+                            <p class="text-muted">Start using the app to receive personalized recommendations</p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="{{ url_for('mood.new_entry') }}" class="btn btn-primary">
+                                    <i class="fas fa-heart me-2"></i>Track Mood
+                                </a>
+                                <a href="{{ url_for('journal.new_entry') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-journal-whills me-2"></i>Write Journal
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -72,11 +136,22 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-line me-2"></i>Mood Trends
+                        <i class="fas fa-chart-line me-2"></i>Mood Trends (Last 7 Days)
                     </h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="moodChart" width="400" height="200"></canvas>
+                    {% if mood_entries and mood_entries|length > 0 %}
+                        <canvas id="moodChart" width="400" height="200"></canvas>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No mood data available</h5>
+                            <p class="text-muted">Start tracking your mood to see trends and insights</p>
+                            <a href="{{ url_for('mood.new_entry') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Track Your First Mood
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -84,11 +159,23 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>Mood Distribution
+                        <i class="fas fa-chart-pie me-2"></i>Current Mood: {{ avg_mood }}/10
                     </h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="moodPieChart" width="400" height="200"></canvas>
+                    {% if mood_entries and mood_entries|length > 0 %}
+                        <div class="text-center mb-3">
+                            <div class="display-4 text-primary">{{ avg_mood }}</div>
+                            <p class="text-muted">Average Mood Score</p>
+                        </div>
+                        <canvas id="moodPieChart" width="400" height="200"></canvas>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No mood data yet</h5>
+                            <p class="text-muted">Your mood insights will appear here</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -173,19 +260,41 @@
         </div>
     </div>
 </div>
+
+<!-- Doctor Recommendations Modal -->
+<div class="modal fade" id="doctorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-md me-2"></i>Nearby Mental Health Professionals
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="doctorsList" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Mood Trends Chart
+// Mood Trends Chart with real data
 const moodCtx = document.getElementById('moodChart').getContext('2d');
+{% if mood_entries and mood_entries|length > 0 %}
 const moodChart = new Chart(moodCtx, {
     type: 'line',
     data: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        labels: {{ mood_entries|selectattr('created_at')|map(attribute='created_at')|map('strftime', '%m/%d')|list|tojson }},
         datasets: [{
             label: 'Mood Score',
-            data: [7, 6, 8, 7, 9, 8, 7],
+            data: {{ mood_entries|selectattr('mood_score')|map(attribute='mood_score')|list|tojson }},
             borderColor: '#6366f1',
             backgroundColor: 'rgba(99, 102, 241, 0.1)',
             tension: 0.4,
@@ -211,21 +320,44 @@ const moodChart = new Chart(moodCtx, {
         }
     }
 });
+{% else %}
+// No mood data available
+const moodChart = null;
+{% endif %}
 
 // Mood Distribution Pie Chart
+{% if mood_entries and mood_entries|length > 0 %}
 const pieCtx = document.getElementById('moodPieChart').getContext('2d');
+const moodLabels = ['Happy (8-10)', 'Good (6-7)', 'Neutral (4-5)', 'Low (2-3)', 'Very Low (1)'];
+const moodData = [0, 0, 0, 0, 0];
+
+// Calculate mood distribution
+{% for entry in mood_entries %}
+    {% if entry.mood_score >= 8 %}
+        moodData[0]++;
+    {% elif entry.mood_score >= 6 %}
+        moodData[1]++;
+    {% elif entry.mood_score >= 4 %}
+        moodData[2]++;
+    {% elif entry.mood_score >= 2 %}
+        moodData[3]++;
+    {% else %}
+        moodData[4]++;
+    {% endif %}
+{% endfor %}
+
 const pieChart = new Chart(pieCtx, {
     type: 'doughnut',
     data: {
-        labels: ['Happy', 'Calm', 'Anxious', 'Sad', 'Excited'],
+        labels: moodLabels,
         datasets: [{
-            data: [30, 25, 20, 15, 10],
+            data: moodData,
             backgroundColor: [
                 '#10b981',
                 '#06b6d4',
                 '#f59e0b',
-                '#ef4444',
-                '#8b5cf6'
+                '#f97316',
+                '#ef4444'
             ],
             borderWidth: 0
         }]
@@ -244,7 +376,101 @@ const pieChart = new Chart(pieCtx, {
         }
     }
 });
+{% else %}
+// No mood data available
+const pieChart = null;
+{% endif %}
+
+// Handle recommendation actions
+function handleRecommendation(type, action) {
+    if (type === 'mood' && action.includes('therapists')) {
+        $('#doctorModal').modal('show');
+        loadDoctors();
+    } else if (action.includes('self-care')) {
+        // Redirect to mood tracking with self-care suggestions
+        window.location.href = "{{ url_for('mood.new_entry') }}";
+    } else if (action.includes('exercise')) {
+        // Redirect to tasks with exercise suggestions
+        window.location.href = "{{ url_for('tasks.new_task') }}";
+    } else if (action.includes('social')) {
+        // Redirect to journal with social activity suggestions
+        window.location.href = "{{ url_for('journal.new_entry') }}";
+    } else if (action.includes('tasks')) {
+        window.location.href = "{{ url_for('tasks.index') }}";
+    } else if (action.includes('goals')) {
+        window.location.href = "{{ url_for('goals.index') }}";
+    }
+}
+
+// Load doctors data
+function loadDoctors() {
+    fetch('/api/doctors')
+        .then(response => response.json())
+        .then(doctors => {
+            const doctorsList = document.getElementById('doctorsList');
+            doctorsList.innerHTML = '';
+            
+            doctors.forEach(doctor => {
+                const doctorCard = document.createElement('div');
+                doctorCard.className = 'card mb-3';
+                doctorCard.innerHTML = `
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="card-title mb-1">${doctor.name}</h6>
+                                <p class="text-muted mb-1">${doctor.specialty}</p>
+                                <p class="text-muted mb-1 small">
+                                    <i class="fas fa-map-marker-alt me-1"></i>${doctor.address}
+                                </p>
+                                <p class="text-muted mb-0 small">
+                                    <i class="fas fa-phone me-1"></i>${doctor.phone}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="mb-2">
+                                    <span class="badge bg-${doctor.available ? 'success' : 'secondary'}">
+                                        ${doctor.available ? 'Available' : 'Not Available'}
+                                    </span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-warning">
+                                        <i class="fas fa-star"></i> ${doctor.rating}
+                                    </span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-info small">
+                                        <i class="fas fa-location-arrow me-1"></i>${doctor.distance}
+                                    </span>
+                                </div>
+                                <p class="text-muted small mb-0">Next: ${doctor.next_available}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                doctorsList.appendChild(doctorCard);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading doctors:', error);
+            document.getElementById('doctorsList').innerHTML = 
+                '<div class="alert alert-danger">Error loading doctors. Please try again later.</div>';
+        });
+}
+
+// Refresh recommendations
+function refreshRecommendations() {
+    fetch('/api/recommendations')
+        .then(response => response.json())
+        .then(recommendations => {
+            // Reload the page to show updated recommendations
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error refreshing recommendations:', error);
+        });
+}
 </script>
 {% endblock %}
+
 
 

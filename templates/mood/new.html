@@ -1,96 +1,227 @@
 {% extends "base.html" %}
 
-{% block title %}New Mood Entry{% endblock %}
+{% block title %}New Mood Entry - AI Powered Mental Health and Personalized Recommendation System{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 max-w-2xl">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Track Your Mood</h1>
-        <p class="text-gray-600 mt-2">How are you feeling today? Track your mood and related factors.</p>
+<div class="main-content">
+    <!-- Header Section -->
+    <div class="text-center mb-5">
+        <h1 class="h2 text-dark mb-2">
+            <i class="fas fa-heart text-primary me-2"></i>Track Your Mood
+        </h1>
+        <p class="text-muted">How are you feeling today? Let's capture your emotional state and understand what's influencing it.</p>
     </div>
 
-    <form id="moodForm" class="bg-white rounded-lg shadow-md p-6">
-        <div class="mb-6">
-            <label for="mood_score" class="block text-sm font-medium text-gray-700 mb-2">Mood Score (1-10)</label>
-            <div class="flex items-center space-x-4">
-                <input type="range" id="mood_score" name="mood_score" min="1" max="10" value="5" 
-                       class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                <span id="mood_value" class="text-2xl font-bold text-blue-600 w-12 text-center">5</span>
-            </div>
-            <div class="flex justify-between text-xs text-gray-500 mt-1">
-                <span>😢 Very Low</span>
-                <span>😐 Neutral</span>
-                <span>😊 Very High</span>
-            </div>
-        </div>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form id="moodForm" class="card shadow-lg border-0">
+                <div class="card-body p-4 p-lg-5">
+                    
+                    <!-- Mood Score Section -->
+                    <div class="mb-5">
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-smile me-2 text-warning"></i>How are you feeling right now?
+                        </h5>
+                        <div class="text-center mb-4">
+                            <div class="mood-display mb-3">
+                                <div id="moodEmoji" class="display-1 mb-2">😐</div>
+                                <div id="moodLabel" class="h4 text-muted">Neutral</div>
+                                <div id="moodScore" class="h2 text-primary">5/10</div>
+                            </div>
+                        </div>
+                        <div class="mood-slider-container">
+                            <input type="range" id="mood_score" name="mood_score" min="1" max="10" value="5" 
+                                   class="form-range mood-slider" step="1">
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-danger small">😢 Very Low</span>
+                                <span class="text-warning small">😐 Neutral</span>
+                                <span class="text-success small">😊 Very High</span>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="mb-6">
-            <label for="mood_label" class="block text-sm font-medium text-gray-700 mb-2">Mood Label</label>
-            <input type="text" id="mood_label" name="mood_label" 
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   placeholder="e.g., Happy, Anxious, Calm, Stressed">
-        </div>
+                    <!-- Mood Label Section -->
+                    <div class="mb-4">
+                        <label for="mood_label" class="form-label">
+                            <i class="fas fa-tag me-2 text-info"></i>Mood Label
+                        </label>
+                        <input type="text" id="mood_label" name="mood_label" 
+                               class="form-control form-control-lg"
+                               placeholder="e.g., Happy, Anxious, Calm, Stressed, Excited">
+                    </div>
 
-        <div class="mb-6">
-            <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-            <textarea id="notes" name="notes" rows="3" 
-                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="What's on your mind? Any specific thoughts or feelings?"></textarea>
-        </div>
+                    <!-- Notes Section -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">
+                            <i class="fas fa-edit me-2 text-primary"></i>What's on your mind?
+                        </label>
+                        <textarea id="notes" name="notes" rows="4" 
+                                  class="form-control"
+                                  placeholder="Share your thoughts, feelings, or what happened today that might be affecting your mood..."></textarea>
+                    </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-                <label for="sleep_hours" class="block text-sm font-medium text-gray-700 mb-2">Sleep Hours</label>
-                <input type="number" id="sleep_hours" name="sleep_hours" min="0" max="24" step="0.5"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       placeholder="7.5">
-            </div>
-            <div>
-                <label for="exercise_minutes" class="block text-sm font-medium text-gray-700 mb-2">Exercise (minutes)</label>
-                <input type="number" id="exercise_minutes" name="exercise_minutes" min="0"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       placeholder="30">
-            </div>
-        </div>
+                    <!-- Wellness Metrics -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4">
+                            <div class="wellness-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-moon fa-2x text-info mb-2"></i>
+                                <label for="sleep_hours" class="form-label small">Sleep Hours</label>
+                                <input type="number" id="sleep_hours" name="sleep_hours" min="0" max="24" step="0.5"
+                                       class="form-control text-center"
+                                       placeholder="7.5">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="wellness-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-dumbbell fa-2x text-success mb-2"></i>
+                                <label for="exercise_minutes" class="form-label small">Exercise (min)</label>
+                                <input type="number" id="exercise_minutes" name="exercise_minutes" min="0"
+                                       class="form-control text-center"
+                                       placeholder="30">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="wellness-card text-center p-3 bg-light rounded">
+                                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                <label for="social_interactions" class="form-label small">Social Interactions</label>
+                                <input type="number" id="social_interactions" name="social_interactions" min="0"
+                                       class="form-control text-center"
+                                       placeholder="3">
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="mb-6">
-            <label for="social_interactions" class="block text-sm font-medium text-gray-700 mb-2">Social Interactions</label>
-            <input type="number" id="social_interactions" name="social_interactions" min="0"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   placeholder="Number of meaningful social interactions today">
-        </div>
+                    <!-- Activities Section -->
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-list-check me-2 text-warning"></i>What did you do today?
+                        </label>
+                        <div class="activities-grid">
+                            {% for activity in ['Work', 'Reading', 'Exercise', 'Social Media', 'Gaming', 'Cooking', 'Cleaning', 'Shopping', 'Walking', 'Meditation', 'Music', 'TV/Movies', 'Family Time', 'Friends', 'Study', 'Other'] %}
+                            <div class="activity-item">
+                                <input type="checkbox" id="activity_{{ loop.index }}" name="activities" value="{{ activity }}" 
+                                       class="btn-check">
+                                <label for="activity_{{ loop.index }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-{{ 'briefcase' if activity == 'Work' else 'book' if activity == 'Reading' else 'dumbbell' if activity == 'Exercise' else 'share-alt' if activity == 'Social Media' else 'gamepad' if activity == 'Gaming' else 'utensils' if activity == 'Cooking' else 'broom' if activity == 'Cleaning' else 'shopping-cart' if activity == 'Shopping' else 'walking' if activity == 'Walking' else 'om' if activity == 'Meditation' else 'music' if activity == 'Music' else 'tv' if activity == 'TV/Movies' else 'home' if activity == 'Family Time' else 'user-friends' if activity == 'Friends' else 'graduation-cap' if activity == 'Study' else 'ellipsis-h' }} me-2"></i>
+                                    {{ activity }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
 
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Activities</label>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {% for activity in ['Work', 'Reading', 'Exercise', 'Social Media', 'Gaming', 'Cooking', 'Cleaning', 'Shopping', 'Other'] %}
-                <label class="flex items-center">
-                    <input type="checkbox" name="activities" value="{{ activity }}" 
-                           class="mr-2 text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm text-gray-700">{{ activity }}</span>
-                </label>
-                {% endfor %}
-            </div>
-        </div>
+                    <!-- Quick Mood Boosters -->
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-lightbulb me-2 text-warning"></i>Quick Mood Boosters
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="mood-booster p-3 bg-light rounded">
+                                    <h6 class="text-success mb-2">💪 Physical</h6>
+                                    <small class="text-muted">Take a walk, stretch, or do some light exercise</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mood-booster p-3 bg-light rounded">
+                                    <h6 class="text-info mb-2">🧘 Mental</h6>
+                                    <small class="text-muted">Deep breathing, meditation, or journaling</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mood-booster p-3 bg-light rounded">
+                                    <h6 class="text-primary mb-2">👥 Social</h6>
+                                    <small class="text-muted">Call a friend, family member, or colleague</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mood-booster p-3 bg-light rounded">
+                                    <h6 class="text-warning mb-2">🎯 Productive</h6>
+                                    <small class="text-muted">Complete a small task or organize something</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="flex space-x-4">
-            <button type="submit" 
-                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
-                Save Mood Entry
-            </button>
-            <a href="{{ url_for('mood.index') }}" 
-               class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg text-center transition duration-200">
-                Cancel
-            </a>
+                    <!-- Submit Buttons -->
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('mood.index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Mood History
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Save Mood Entry
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
 
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle fa-3x text-success"></i>
+                </div>
+                <h5 class="modal-title">Mood Entry Saved!</h5>
+                <p class="text-muted">Your mood has been recorded successfully.</p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='/mood/'">
+                        View Mood History
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" onclick="resetForm()">
+                        Add Another Entry
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-document.getElementById('mood_score').addEventListener('input', function() {
-    document.getElementById('mood_value').textContent = this.value;
+// Mood slider functionality
+const moodSlider = document.getElementById('mood_score');
+const moodEmoji = document.getElementById('moodEmoji');
+const moodLabel = document.getElementById('moodLabel');
+const moodScore = document.getElementById('moodScore');
+
+const moodData = {
+    1: { emoji: '😢', label: 'Very Low', color: 'text-danger' },
+    2: { emoji: '😔', label: 'Low', color: 'text-danger' },
+    3: { emoji: '😞', label: 'Down', color: 'text-warning' },
+    4: { emoji: '😐', label: 'Neutral', color: 'text-warning' },
+    5: { emoji: '😐', label: 'Neutral', color: 'text-warning' },
+    6: { emoji: '🙂', label: 'Good', color: 'text-info' },
+    7: { emoji: '😊', label: 'Happy', color: 'text-info' },
+    8: { emoji: '😄', label: 'Very Happy', color: 'text-success' },
+    9: { emoji: '🤩', label: 'Excited', color: 'text-success' },
+    10: { emoji: '🥳', label: 'Amazing', color: 'text-success' }
+};
+
+function updateMoodDisplay(value) {
+    const mood = moodData[value];
+    moodEmoji.textContent = mood.emoji;
+    moodLabel.textContent = mood.label;
+    moodScore.textContent = `${value}/10`;
+    
+    // Update colors
+    moodEmoji.className = `display-1 mb-2 ${mood.color}`;
+    moodScore.className = `h2 ${mood.color}`;
+}
+
+moodSlider.addEventListener('input', function() {
+    updateMoodDisplay(this.value);
 });
 
+// Initialize display
+updateMoodDisplay(5);
+
+// Form submission
 document.getElementById('moodForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -117,7 +248,8 @@ document.getElementById('moodForm').addEventListener('submit', async function(e)
         });
         
         if (response.ok) {
-            window.location.href = '/mood/';
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
         } else {
             const error = await response.json();
             alert('Error: ' + error.error);
@@ -127,5 +259,128 @@ document.getElementById('moodForm').addEventListener('submit', async function(e)
         alert('An error occurred while saving your mood entry.');
     }
 });
+
+// Reset form
+function resetForm() {
+    document.getElementById('moodForm').reset();
+    updateMoodDisplay(5);
+    const successModal = bootstrap.Modal.getInstance(document.getElementById('successModal'));
+    successModal.hide();
+}
+
+// Add some interactivity to wellness cards
+document.querySelectorAll('.wellness-card input').forEach(input => {
+    input.addEventListener('focus', function() {
+        this.parentElement.style.transform = 'scale(1.05)';
+        this.parentElement.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+    });
+    
+    input.addEventListener('blur', function() {
+        this.parentElement.style.transform = 'scale(1)';
+        this.parentElement.style.boxShadow = 'none';
+    });
+});
+
+// Add animation to activity items
+document.querySelectorAll('.activity-item label').forEach(label => {
+    label.addEventListener('click', function() {
+        this.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            this.style.transform = 'scale(1)';
+        }, 150);
+    });
+});
 </script>
+
+<style>
+.mood-slider {
+    height: 8px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #dc3545 0%, #ffc107 50%, #28a745 100%);
+}
+
+.mood-slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #6366f1;
+    cursor: pointer;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.mood-slider::-moz-range-thumb {
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #6366f1;
+    cursor: pointer;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.mood-display {
+    transition: all 0.3s ease;
+}
+
+.wellness-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.wellness-card:hover {
+    border-color: #6366f1;
+}
+
+.activities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem;
+}
+
+.activity-item label {
+    width: 100%;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.activity-item label:hover {
+    transform: translateY(-2px);
+}
+
+.mood-booster {
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.mood-booster:hover {
+    border-color: #6366f1;
+    transform: translateY(-2px);
+}
+
+.form-control:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+}
+
+.btn-check:checked + .btn-outline-primary {
+    background-color: #6366f1;
+    border-color: #6366f1;
+    color: white;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+.form-control-lg {
+    border-radius: 10px;
+}
+
+.btn-lg {
+    border-radius: 10px;
+    padding: 12px 24px;
+}
+</style>
 {% endblock %}
