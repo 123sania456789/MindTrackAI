@@ -20,7 +20,7 @@
 
     <!-- Stats Cards -->
     <div class="row g-4 mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card text-center">
                 <div class="card-body">
                     <div class="text-primary mb-2">
@@ -31,7 +31,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card text-center">
                 <div class="card-body">
                     <div class="text-success mb-2">
@@ -42,18 +42,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <div class="text-warning mb-2">
-                        <i class="fas fa-tasks fa-2x"></i>
-                    </div>
-                    <h4 class="card-title">{{ active_tasks }}</h4>
-                    <p class="card-text text-muted">Active Tasks</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card text-center">
                 <div class="card-body">
                     <div class="text-info mb-2">
@@ -293,9 +282,6 @@
                         <a href="{{ url_for('mood.new_entry') }}" class="btn btn-outline-success">
                             <i class="fas fa-heart me-2"></i>Track Mood
                         </a>
-                        <a href="{{ url_for('tasks.new_task') }}" class="btn btn-outline-warning">
-                            <i class="fas fa-plus me-2"></i>Add Task
-                        </a>
                         <a href="{{ url_for('goals.new_goal') }}" class="btn btn-outline-info">
                             <i class="fas fa-bullseye me-2"></i>Set Goal
                         </a>
@@ -437,14 +423,9 @@ function handleRecommendation(type, action) {
     } else if (action.includes('self-care')) {
         // Redirect to mood tracking with self-care suggestions
         window.location.href = "{{ url_for('mood.new_entry') }}";
-    } else if (action.includes('exercise')) {
-        // Redirect to tasks with exercise suggestions
-        window.location.href = "{{ url_for('tasks.new_task') }}";
     } else if (action.includes('social')) {
         // Redirect to journal with social activity suggestions
         window.location.href = "{{ url_for('journal.new_entry') }}";
-    } else if (action.includes('tasks')) {
-        window.location.href = "{{ url_for('tasks.index') }}";
     } else if (action.includes('goals')) {
         window.location.href = "{{ url_for('goals.index') }}";
     }
