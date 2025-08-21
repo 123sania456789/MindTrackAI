@@ -10,4 +10,4 @@ login_manager = LoginManager()
 cors = CORS()
 
 # Configure login manager
-login_manager.login_view = 'login'
+login_manager.login_view = 'auth.login'

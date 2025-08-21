@@ -78,3 +78,34 @@ class Goal(db.Model):
     status = db.Column(db.String(20), default='active')  # active, completed, abandoned
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+class AssessmentSession(db.Model):
+    __tablename__ = 'assessment_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    instrument = db.Column(db.String(50), nullable=False)  # 'phq9' or 'scid5pd'
+    started_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    completed_at = db.Column(db.DateTime)
+    # Results (PHQ-9)
+    score = db.Column(db.Integer)
+    severity = db.Column(db.String(50))
+    # Results (SCID-5-PD)
+    positives = db.Column(db.Integer)
+    risk_flag = db.Column(db.Boolean)
+    # Raw payloads (JSON as text for SQLite)
+    answers_json = db.Column(db.Text)
+    state_json = db.Column(db.Text)
+
+
+class ChatMessage(db.Model):
+    __tablename__ = 'chat_messages'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    role = db.Column(db.String(10), nullable=False)  # 'user' or 'bot'
+    text = db.Column(db.Text, nullable=False)
+    sentiment = db.Column(db.String(20))
+    confidence = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

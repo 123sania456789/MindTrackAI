@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Chatbot{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-dark mb-0"><i class="fas fa-comments me-2"></i>AI Chat</h1>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div id="chatThread" style="height: 420px; overflow:auto; background:#f8fafc; padding:12px; border-radius:8px;" class="vstack gap-2"></div>
+            <div class="input-group mt-3">
+                <input id="chatInput" type="text" class="form-control" placeholder="Type a message...">
+                <button id="chatSend" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addMsg(text, role){
+  const wrap = document.createElement('div');
+  wrap.className = `d-flex ${role==='bot'?'justify-content-start':'justify-content-end'}`;
+  const bubble = document.createElement('div');
+  bubble.className = `p-2 rounded ${role==='bot'?'bg-white border':'bg-primary text-white'}`;
+  bubble.style.maxWidth='80%';
+  bubble.innerText=text;
+  wrap.appendChild(bubble);
+  const th=document.getElementById('chatThread');
+  th.appendChild(wrap); th.scrollTop=th.scrollHeight;
+}
+
+async function send(){
+  const input=document.getElementById('chatInput');
+  const text=(input.value||'').trim();
+  if(!text) return;
+  input.value='';
+  addMsg(text,'user');
+  const res=await fetch('/chat/api/message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  const data=await res.json();
+  if(data.reply){ addMsg(`${data.reply}  (sentiment: ${data.sentiment})`,'bot'); }
+  // Quick replies
+  if(data.quick_replies){
+    const wrap=document.createElement('div'); wrap.className='d-flex flex-wrap gap-2 mt-2';
+    data.quick_replies.forEach(t=>{ const b=document.createElement('button'); b.className='btn btn-sm btn-outline-secondary'; b.textContent=t; b.onclick=()=>{ addMsg(t,'user'); sendFrom(t); wrap.remove(); }; wrap.appendChild(b); });
+    document.getElementById('chatThread').appendChild(wrap);
+  }
+  if(data.escalate && data.doctors && data.doctors.length){
+    const list = data.doctors.map(d=>`• ${d.name} — ${d.specialty} — ${d.distance} — ${d.next_available}\n   ${d.phone}, ${d.address}`).join('\n');
+    addMsg(`Here are a few nearby professionals:\n${list}`,'bot');
+    const link = document.createElement('a');
+    link.href = '/doctors/';
+    link.className = 'btn btn-outline-primary btn-sm mt-2';
+    link.textContent = 'Browse All Professionals';
+    const wrap = document.createElement('div');
+    wrap.className = 'd-flex justify-content-start';
+    wrap.appendChild(link);
+    document.getElementById('chatThread').appendChild(wrap);
+  }
+}
+
+async function sendFrom(text){
+  const res=await fetch('/chat/api/message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  const data=await res.json();
+  if(data.reply){ addMsg(`${data.reply}  (sentiment: ${data.sentiment})`,'bot'); }
+}
+
+document.getElementById('chatSend').onclick=send;
+document.getElementById('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ send(); }});
+
+// warm greeting
+addMsg('Hi! I\'m here to listen. How are you feeling today?','bot');
+</script>
+{% endblock %}
+

@@ -11,12 +11,12 @@ from sqlalchemy import text
 
 def init_database():
     """Initialize the database with tables"""
-    print("🔧 Initializing database...")
+    print("Initializing database...")
     try:
         with app.app_context():
             # Create all tables
             db.create_all()
-            print("✅ Database tables created successfully")
+            print("Database tables created successfully")
             
             # Check if admin user exists
             admin_user = User.query.filter_by(username='admin').first()
@@ -30,11 +30,11 @@ def init_database():
                 )
                 db.session.add(admin_user)
                 db.session.commit()
-                print("✅ Admin user created (username: admin, password: admin123)")
+                print("Admin user created (username: admin, password: admin123)")
             
 
             
-            print("🎉 Database initialization complete!")
+            print("Database initialization complete!")
             
     except Exception as e:
         print(f"❌ Error initializing database: {e}")
@@ -44,13 +44,13 @@ def init_database():
 
 def check_dependencies():
     """Check if required services are available"""
-    print("🔍 Checking dependencies...")
+    print("Checking dependencies...")
     
     # Check SQLite database
     try:
         with app.app_context():
             db.session.execute(text('SELECT 1'))
-            print("✅ SQLite database connection successful")
+            print("SQLite database connection successful")
     except Exception as e:
         print(f"❌ Database connection failed: {e}")
         return False
@@ -59,7 +59,7 @@ def check_dependencies():
 
 def main():
     """Main startup function"""
-    print("🚀 AI Powered Mental Health Prediction and Personalized Assistance System Startup")
+    print("AI Powered Mental Health Prediction and Personalized Assistance System Startup")
     print("=" * 50)
     
     # Check dependencies
@@ -72,17 +72,17 @@ def main():
         print("\n❌ Database initialization failed.")
         sys.exit(1)
     
-    print("\n🎯 Starting AI Powered Mental Health Prediction and Personalized Assistance System...")
-    print("📱 Web application will be available at: http://localhost:5000")
-    print("🔑 Admin login: admin / admin123")
-    print("\n💡 To stop the application, press Ctrl+C")
+    print("\nStarting AI Powered Mental Health Prediction and Personalized Assistance System...")
+    print("Web application will be available at: http://localhost:5000")
+    print("Admin login: admin / admin123")
+    print("\nTo stop the application, press Ctrl+C")
     print("=" * 50)
     
     # Start the Flask application
     try:
         app.run(host='0.0.0.0', port=5000, debug=True)
     except KeyboardInterrupt:
-        print("\n\n👋 AI Powered Mental Health Prediction and Personalized Assistance System stopped. Goodbye!")
+        print("\n\nAI Powered Mental Health Prediction and Personalized Assistance System stopped. Goodbye!")
     except Exception as e:
         print(f"\n❌ Error starting application: {e}")
         sys.exit(1)

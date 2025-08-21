@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Assessments{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-dark mb-0"><i class="fas fa-list-check me-2"></i>Mental Health Assessments</h1>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">PHQ-9 (Randomized + Branching)</div>
+                <div class="card-body">
+                    <div id="phq9Thread" class="vstack gap-3" style="max-height: 420px; overflow:auto; background:#f8fafc; padding:12px; border-radius:8px;"></div>
+                    <div class="d-grid d-md-flex gap-2 mt-3">
+                        <button class="btn btn-primary" id="phq9Start">Start / Next</button>
+                        <button class="btn btn-outline-secondary" id="phq9Reset">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">SCID-5-PD Screening (20+ randomized, branching)</div>
+                <div class="card-body">
+                    <div id="scidThread" class="vstack gap-3" style="max-height: 420px; overflow:auto; background:#f8fafc; padding:12px; border-radius:8px;"></div>
+                    <div class="d-grid d-md-flex gap-2 mt-3">
+                        <button class="btn btn-primary" id="scidStart">Start / Next</button>
+                        <button class="btn btn-outline-secondary" id="scidReset">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addBubble(thread, text, role) {
+  const wrap = document.createElement('div');
+  wrap.className = `d-flex ${role==='bot'?'justify-content-start':'justify-content-end'}`;
+  const bubble = document.createElement('div');
+  bubble.className = `p-2 rounded ${role==='bot'?'bg-white border':'bg-primary text-white'}`;
+  bubble.style.maxWidth = '80%';
+  bubble.innerText = text;
+  wrap.appendChild(bubble);
+  thread.appendChild(wrap);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+async function runAssessment(instrument, threadEl, stateVar) {
+  const answers = window[stateVar].answers;
+  const state = window[stateVar].state;
+  const res = await fetch('/assessments/api/next_question', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ instrument, answers, state })
+  });
+  const data = await res.json();
+  if (data.done) {
+    addBubble(threadEl, instrument==='phq9' ? `PHQ-9 finished. Score: ${data.score} (${data.severity}).` : `SCID-5-PD finished. Positives: ${data.positives}. Risk: ${data.risk_flag ? 'Yes' : 'No'}.`, 'bot');
+    return;
+  }
+  const q = data.question;
+  window[stateVar].state = data.state;
+  addBubble(threadEl, q.text, 'bot');
+
+  // Render quick reply buttons
+  const btnWrap = document.createElement('div');
+  btnWrap.className = 'd-flex flex-wrap gap-2 mt-2';
+  if (q.type === 'likert') {
+    const labels = ['Not at all (0)','Several days (1)','More than half the days (2)','Nearly every day (3)'];
+    q.options.forEach((opt, idx) => {
+      const b = document.createElement('button');
+      b.className = 'btn btn-sm btn-outline-primary';
+      b.innerText = labels[idx] || String(opt);
+      b.onclick = () => {
+        btnWrap.remove();
+        addBubble(threadEl, labels[idx] || String(opt), 'user');
+        window[stateVar].answers.push({id: q.id, value: opt});
+        runAssessment(instrument, threadEl, stateVar);
+      };
+      btnWrap.appendChild(b);
+    });
+  } else {
+    ['Yes','No'].forEach((label, i) => {
+      const b = document.createElement('button');
+      b.className = 'btn btn-sm btn-outline-primary';
+      b.innerText = label;
+      b.onclick = () => {
+        btnWrap.remove();
+        addBubble(threadEl, label, 'user');
+        window[stateVar].answers.push({id: q.id, value: i===0});
+        runAssessment(instrument, threadEl, stateVar);
+      };
+      btnWrap.appendChild(b);
+    });
+  }
+  threadEl.appendChild(btnWrap);
+  threadEl.scrollTop = threadEl.scrollHeight;
+}
+
+// PHQ-9
+window.phq9 = {answers: [], state: {}};
+document.getElementById('phq9Start').onclick = () => runAssessment('phq9', document.getElementById('phq9Thread'), 'phq9');
+document.getElementById('phq9Reset').onclick = () => { window.phq9 = {answers: [], state: {}}; document.getElementById('phq9Thread').innerHTML = ''; };
+
+// SCID-5-PD
+window.scid = {answers: [], state: {}};
+document.getElementById('scidStart').onclick = () => runAssessment('scid5pd', document.getElementById('scidThread'), 'scid');
+document.getElementById('scidReset').onclick = () => { window.scid = {answers: [], state: {}}; document.getElementById('scidThread').innerHTML = ''; };
+</script>
+{% endblock %}
+

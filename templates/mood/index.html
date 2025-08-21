@@ -36,8 +36,8 @@
                     <div class="mb-3">
                         <i class="fas fa-calendar-day fa-3x opacity-75"></i>
                     </div>
-                    <h3 class="card-title mb-1">{{ entries|selectattr('created_at', 'ge', (moment().subtract(7, 'days').toDate()))|list|length }}</h3>
-                    <p class="card-text opacity-90">This Week</p>
+                    <h3 class="card-title mb-1">{{ [entries|length, 7]|min }}</h3>
+                    <p class="card-text opacity-90">Last 7 Entries</p>
                 </div>
             </div>
         </div>
@@ -123,7 +123,7 @@
                     <option value="2-3">Low (2-3)</option>
                     <option value="1">Very Low (1)</option>
                 </select>
-                <button class="btn btn-sm btn-outline-secondary" onclick="toggleView()">
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleView(this)">
                     <i class="fas fa-th-large me-1"></i>Toggle View
                 </button>
             </div>
@@ -268,7 +268,7 @@ const moodTrendCtx = document.getElementById('moodTrendChart').getContext('2d');
 const moodTrendChart = new Chart(moodTrendCtx, {
     type: 'line',
     data: {
-        labels: {{ entries|map(attribute='created_at.strftime', '%m/%d')|list|tojson }},
+        labels: {{ entries|map(attribute='created_at')|map('strftime', '%m/%d')|list|tojson }},
         datasets: [{
             label: 'Mood Score',
             data: {{ entries|map(attribute='mood_score')|list|tojson }},
@@ -388,9 +388,8 @@ document.getElementById('moodFilter').addEventListener('change', function() {
 
 // Toggle view between grid and list
 let isGridView = true;
-function toggleView() {
+function toggleView(button) {
     const grid = document.getElementById('moodGrid');
-    const button = event.target;
     
     if (isGridView) {
         grid.classList.remove('row');

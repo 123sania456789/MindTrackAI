@@ -28,6 +28,7 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            overflow-x: hidden;
         }
         
         .navbar {
@@ -60,6 +61,7 @@
             margin: 2rem auto;
             padding: 2rem;
             max-width: 1200px;
+            overflow: hidden;
         }
         
         .card {
@@ -125,81 +127,43 @@
             font-size: 1.5rem;
             margin-bottom: 1rem;
         }
+
+        /* Constrain charts to prevent excessive page height */
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+    <nav class="navbar navbar-light fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-brain me-2"></i>AI Powered Mental Health Prediction and Personalized Assistance System
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+            <div class="d-flex flex-column align-items-center w-100">
+                <a class="navbar-brand text-center" href="{{ url_for('index') }}">
+                    <i class="fas fa-brain me-2"></i>AI Powered Mental Health Prediction and Personalized Assistance System
+                </a>
+                <ul class="nav justify-content-center flex-wrap mt-2" style="gap: .5rem;">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard') }}">
-                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('journal.index') }}">
-                                <i class="fas fa-journal-whills me-1"></i>Journal
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('mood.index') }}">
-                                <i class="fas fa-heart me-1"></i>Mood
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('tasks.index') }}">
-                                <i class="fas fa-tasks me-1"></i>Tasks
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('goals.index') }}">
-                                <i class="fas fa-bullseye me-1"></i>Goals
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('doctors.index') }}">
-                                <i class="fas fa-user-md me-1"></i>Doctors
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('ml.insights') }}">
-                                <i class="fas fa-chart-line me-1"></i>Insights
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user me-1"></i>{{ current_user.username }}
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                            </ul>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('journal.index') }}"><i class="fas fa-journal-whills me-1"></i>Journal</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('mood.index') }}"><i class="fas fa-heart me-1"></i>Mood</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('tasks.index') }}"><i class="fas fa-tasks me-1"></i>Tasks</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('goals.index') }}"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('doctors.index') }}"><i class="fas fa-user-md me-1"></i>Doctors</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('ml.insights') }}"><i class="fas fa-chart-line me-1"></i>Insights</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('assessments.assessments_index') }}"><i class="fas fa-list-check me-1"></i>Assessments</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('chat.chat_index') }}"><i class="fas fa-comments me-1"></i>Chatbot</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-1"></i>Logout</a></li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">
-                                <i class="fas fa-sign-in-alt me-1"></i>Login
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">
-                                <i class="fas fa-user-plus me-1"></i>Register
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt me-1"></i>Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}"><i class="fas fa-user-plus me-1"></i>Register</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -225,7 +189,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container text-center">
-            <p class="text-white mb-0">&copy; 2024 AI Powered Mental Health Prediction and Personalized Assistance System. All rights reserved.</p>
+            <p class="text-white mb-0">&copy; 2025 AI Powered Mental Health Prediction and Personalized Assistance System. All rights reserved.</p>
         </div>
     </footer>
 

@@ -3,158 +3,148 @@
 {% block title %}AI Insights{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">AI-Powered Insights</h1>
-        <p class="text-gray-600">Discover patterns and insights from your mental health data</p>
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-dark mb-0">
+            <i class="fas fa-chart-line me-2"></i>AI-Powered Insights
+        </h1>
     </div>
 
-    <!-- Overview Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Total Journal Entries</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ total_entries }}</p>
+    <!-- Overview Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="me-3 text-primary"><i class="fas fa-book fa-2x"></i></div>
+                    <div>
+                        <div class="text-muted small">Total Journal Entries</div>
+                        <div class="h4 mb-0">{{ total_entries }}</div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100 text-green-600">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Average Mood</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ "%.1f"|format(avg_mood) }}/10</p>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="me-3 text-success"><i class="fas fa-smile fa-2x"></i></div>
+                    <div>
+                        <div class="text-muted small">Average Mood</div>
+                        <div class="h4 mb-0">{{ "%.1f"|format(avg_mood) }}/10</div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Mood Entries</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ mood_entries|length }}</p>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="me-3 text-info"><i class="fas fa-heart fa-2x"></i></div>
+                    <div>
+                        <div class="text-muted small">Mood Entries</div>
+                        <div class="h4 mb-0">{{ mood_entries|length }}</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Sentiment Analysis Tool -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Sentiment Analysis</h2>
-        <p class="text-gray-600 mb-4">Get instant insights about the emotional tone of your text</p>
-        
-        <div class="flex space-x-4">
-            <textarea id="sentimentText" rows="3" 
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter text to analyze..."></textarea>
-            <button onclick="analyzeSentiment()" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
-                Analyze
-            </button>
-        </div>
-        
-        <div id="sentimentResult" class="mt-4 hidden">
-            <div class="bg-gray-50 rounded-lg p-4">
-                <h3 class="font-semibold text-gray-800 mb-2">Analysis Results:</h3>
-                <div id="sentimentContent"></div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Sentiment Analysis</h5>
+            <p class="text-muted">Get instant insights about the emotional tone of your text</p>
+            <div class="row g-3 align-items-start">
+                <div class="col-md-9">
+                    <textarea id="sentimentText" rows="3" class="form-control" placeholder="Enter text to analyze..."></textarea>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button onclick="analyzeSentiment()" class="btn btn-primary">Analyze</button>
+                </div>
+            </div>
+            <div id="sentimentResult" class="mt-3" style="display:none;">
+                <div class="bg-light rounded p-3">
+                    <h6 class="mb-2">Analysis Results</h6>
+                    <div id="sentimentContent"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Journal Entries with AI Insights -->
     {% if journal_entries %}
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Recent Journal Entries</h2>
-        <div class="space-y-4">
-            {% for entry in journal_entries[:5] %}
-            <div class="border-l-4 border-blue-500 pl-4 py-2">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-semibold text-gray-800">{{ entry.title }}</h3>
-                    <span class="text-sm text-gray-500">{{ entry.created_at.strftime('%B %d, %Y') }}</span>
-                </div>
-                <p class="text-gray-600 text-sm mb-2">{{ entry.content[:150] }}{% if entry.content|length > 150 %}...{% endif %}</p>
-                
-                {% if entry.sentiment_score %}
-                <div class="flex items-center space-x-4 text-sm">
-                    <span class="text-gray-500">Sentiment: 
-                        <span class="font-medium {% if entry.sentiment_score > 0 %}text-green-600{% elif entry.sentiment_score < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
-                            {{ "%.2f"|format(entry.sentiment_score) }}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Recent Journal Entries</h5>
+            <div class="list-group list-group-flush">
+                {% for entry in journal_entries[:5] %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="mb-1">{{ entry.title }}</h6>
+                        <small class="text-muted">{{ entry.created_at.strftime('%B %d, %Y') }}</small>
+                    </div>
+                    <p class="text-muted small mb-2">{{ entry.content[:150] }}{% if entry.content|length > 150 %}...{% endif %}</p>
+                    {% if entry.sentiment_score %}
+                    <div class="small text-muted">
+                        <span class="me-3">Sentiment: 
+                            <strong class="{% if entry.sentiment_score > 0 %}text-success{% elif entry.sentiment_score < 0 %}text-danger{% else %}text-secondary{% endif %}">
+                                {{ "%.2f"|format(entry.sentiment_score) }}
+                            </strong>
                         </span>
-                    </span>
-                    
-                    {% if entry.emotion_labels %}
-                    <span class="text-gray-500">Emotions: 
-                        {% for emotion in entry.emotion_labels[:3] %}
-                        <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs ml-1">{{ emotion }}</span>
-                        {% endfor %}
-                    </span>
+                        {% if entry.emotion_labels %}
+                        <span>Emotions:
+                            {% for emotion in entry.emotion_labels[:3] %}
+                            <span class="badge bg-light text-dark ms-1">{{ emotion }}</span>
+                            {% endfor %}
+                        </span>
+                        {% endif %}
+                    </div>
                     {% endif %}
                 </div>
-                {% endif %}
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
     </div>
     {% endif %}
 
-    <!-- Mood Trends -->
     {% if mood_entries %}
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Mood Trends</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h3 class="font-medium text-gray-700 mb-3">Recent Mood Scores</h3>
-                <div class="space-y-2">
-                    {% for entry in mood_entries[:7] %}
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">{{ entry.created_at.strftime('%b %d') }}</span>
-                        <div class="flex items-center space-x-2">
-                            <div class="w-16 bg-gray-200 rounded-full h-2">
-                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ (entry.mood_score / 10) * 100 }}%"></div>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Mood Trends</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Recent Mood Scores</h6>
+                    <div class="vstack gap-2">
+                        {% for entry in mood_entries[:7] %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ entry.created_at.strftime('%b %d') }}</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress" style="width: 120px; height: 6px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (entry.mood_score / 10) * 100 }}%"></div>
+                                </div>
+                                <small class="fw-semibold" style="width: 48px; text-align: right;">{{ entry.mood_score }}/10</small>
                             </div>
-                            <span class="text-sm font-medium text-gray-800 w-8">{{ entry.mood_score }}/10</span>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
-            </div>
-            
-            <div>
-                <h3 class="font-medium text-gray-700 mb-3">Mood Distribution</h3>
-                <div class="space-y-2">
-                    {% set mood_counts = {} %}
-                    {% for entry in mood_entries %}
-                        {% if entry.mood_label %}
-                            {% if entry.mood_label in mood_counts %}
-                                {% set _ = mood_counts.update({entry.mood_label: mood_counts[entry.mood_label] + 1}) %}
-                            {% else %}
-                                {% set _ = mood_counts.update({entry.mood_label: 1}) %}
+                <div class="col-md-6">
+                    <h6 class="text-muted">Mood Distribution</h6>
+                    <div class="vstack gap-1">
+                        {% set mood_counts = {} %}
+                        {% for entry in mood_entries %}
+                            {% if entry.mood_label %}
+                                {% if entry.mood_label in mood_counts %}
+                                    {% set _ = mood_counts.update({entry.mood_label: mood_counts[entry.mood_label] + 1}) %}
+                                {% else %}
+                                    {% set _ = mood_counts.update({entry.mood_label: 1}) %}
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% for mood, count in mood_counts.items() %}
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">{{ mood }}</span>
-                        <span class="text-sm font-medium text-gray-800">{{ count }}</span>
+                        {% endfor %}
+                        {% for mood, count in mood_counts.items() %}
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">{{ mood }}</span>
+                            <span class="fw-semibold">{{ count }}</span>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -227,7 +217,7 @@ function displaySentimentResult(result) {
     }
     
     contentDiv.innerHTML = html;
-    resultDiv.classList.remove('hidden');
+    resultDiv.style.display = 'block';
 }
 </script>
 {% endblock %}

@@ -139,9 +139,9 @@
                         <i class="fas fa-chart-line me-2"></i>Mood Trends (Last 7 Days)
                     </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body chart-container">
                     {% if mood_entries and mood_entries|length > 0 %}
-                        <canvas id="moodChart" width="400" height="200"></canvas>
+                        <canvas id="moodChart"></canvas>
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
@@ -162,13 +162,13 @@
                         <i class="fas fa-chart-pie me-2"></i>Current Mood: {{ avg_mood }}/10
                     </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body chart-container">
                     {% if mood_entries and mood_entries|length > 0 %}
                         <div class="text-center mb-3">
                             <div class="display-4 text-primary">{{ avg_mood }}</div>
                             <p class="text-muted">Average Mood Score</p>
                         </div>
-                        <canvas id="moodPieChart" width="400" height="200"></canvas>
+                        <canvas id="moodPieChart"></canvas>
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-heart fa-3x text-muted mb-3"></i>
@@ -181,6 +181,54 @@
         </div>
     </div>
 
+    <!-- Assessments Summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-list-check me-2"></i>Recent Assessments</h5>
+                </div>
+                <div class="card-body">
+                    {% if last_phq9 or last_scid %}
+                        {% if last_phq9 %}
+                        <div class="mb-2">
+                            <div class="small text-muted">PHQ-9</div>
+                            <div>Score: <strong>{{ last_phq9.score or '—' }}</strong> {% if last_phq9.severity %}<span class="badge bg-secondary ms-2">{{ last_phq9.severity|title }}</span>{% endif %}</div>
+                        </div>
+                        {% endif %}
+                        {% if last_scid %}
+                        <div>
+                            <div class="small text-muted">SCID-5-PD</div>
+                            <div>Positives: <strong>{{ last_scid.positives or 0 }}</strong> {% if last_scid.risk_flag %}<span class="badge bg-danger ms-2">Risk</span>{% endif %}</div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-muted">No recent assessment results.</div>
+                    {% endif %}
+                    <a href="{{ url_for('assessments.assessments_index') }}" class="btn btn-outline-primary btn-sm mt-2">Open Assessments</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-comments me-2"></i>Chatbot</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_chat %}
+                        <div class="vstack gap-2" style="max-height: 180px; overflow:auto;">
+                            {% for m in recent_chat %}
+                            <div class="small text-muted">{{ m.created_at.strftime('%b %d %H:%M') }} — <span class="text-secondary">{{ m.text[:80] }}{% if m.text|length > 80 %}...{% endif %}</span></div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-muted">Start a conversation to reflect and get gentle prompts.</div>
+                    {% endif %}
+                    <a href="{{ url_for('chat.chat_index') }}" class="btn btn-outline-secondary btn-sm mt-2">Open Chat</a>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Recent Activity and Quick Actions -->
     <div class="row g-4">
         <div class="col-md-8">
@@ -291,10 +339,10 @@ const moodCtx = document.getElementById('moodChart').getContext('2d');
 const moodChart = new Chart(moodCtx, {
     type: 'line',
     data: {
-        labels: {{ mood_entries|selectattr('created_at')|map(attribute='created_at')|map('strftime', '%m/%d')|list|tojson }},
+        labels: {{ mood_entries|map(attribute='created_at')|map('strftime', '%m/%d')|list|tojson }},
         datasets: [{
             label: 'Mood Score',
-            data: {{ mood_entries|selectattr('mood_score')|map(attribute='mood_score')|list|tojson }},
+            data: {{ mood_entries|map(attribute='mood_score')|list|tojson }},
             borderColor: '#6366f1',
             backgroundColor: 'rgba(99, 102, 241, 0.1)',
             tension: 0.4,

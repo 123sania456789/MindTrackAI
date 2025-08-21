@@ -1,12 +1,14 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db
-from models import User, JournalEntry, MoodEntry, Task, Goal
+from models import User, JournalEntry, MoodEntry, Task, Goal, AssessmentSession, ChatMessage
 from datetime import datetime
 import jwt
 from functools import wraps
 import json
+import random
+from typing import Dict, Any, List
 
 # Authentication Blueprint
 auth_bp = Blueprint('auth', __name__)
@@ -361,5 +363,344 @@ def book_appointment():
         'appointment_id': 12345,
         'status': 'pending_confirmation'
     }), 201
+
+
+# Assessments Blueprint (PHQ-9 + SCID-5-PD screening with branching)
+assessments_bp = Blueprint('assessments', __name__, url_prefix='/assessments')
+
+
+def _phq9_bank() -> List[Dict[str, Any]]:
+    # Minimal PHQ-9 item bank
+    items = [
+        {'id': 'phq1', 'text': 'Little interest or pleasure in doing things', 'type': 'likert', 'options': [0, 1, 2, 3]},
+        {'id': 'phq2', 'text': 'Feeling down, depressed, or hopeless', 'type': 'likert', 'options': [0, 1, 2, 3]},
+        {'id': 'phq3', 'text': 'Trouble falling or staying asleep, or sleeping too much', 'type': 'likert', 'options': [0, 1, 2, 3]},
+        {'id': 'phq4', 'text': 'Feeling tired or having little energy', 'type': 'likert', 'options': [0, 1, 2, 3]},
+        {'id': 'phq5', 'text': 'Poor appetite or overeating', 'type': 'likert', 'options': [0, 1, 2, 3]},
+        {'id': 'phq6', 'text': 'Feeling bad about yourself — or that you are a failure or have let yourself or your family down', 'type': 'likert', 'options': [0, 1, 2, 3]},
+        {'id': 'phq7', 'text': 'Trouble concentrating on things, such as reading or watching television', 'type': 'likert', 'options': [0, 1, 2, 3]},
+        {'id': 'phq8', 'text': 'Moving or speaking so slowly that other people could have noticed, or being so fidgety or restless that you have been moving a lot more than usual', 'type': 'likert', 'options': [0, 1, 2, 3]},
+        {'id': 'phq9', 'text': 'Thoughts that you would be better off dead or of hurting yourself', 'type': 'likert', 'options': [0, 1, 2, 3]},
+    ]
+    return items
+
+
+def _scid5pd_bank() -> List[Dict[str, Any]]:
+    # Screening subset (~24 items) yes/no style, covering multiple domains; not the full copyrighted text
+    items = [
+        {'id': 'scid1', 'text': 'Do you often feel a pervasive pattern of distrust and suspicion of others?', 'type': 'bool'},
+        {'id': 'scid2', 'text': 'Do you prefer being alone and have little interest in close relationships?', 'type': 'bool'},
+        {'id': 'scid3', 'text': 'Do you believe you have special powers or unusual perceptual experiences?', 'type': 'bool'},
+        {'id': 'scid4', 'text': 'Do you avoid social situations because of fears of criticism or rejection?', 'type': 'bool'},
+        {'id': 'scid5', 'text': 'Do you need to be the center of attention and feel uncomfortable when you are not?', 'type': 'bool'},
+        {'id': 'scid6', 'text': 'Do you lack empathy and often exploit others for your own benefit?', 'type': 'bool'},
+        {'id': 'scid7', 'text': 'Do you act impulsively and have difficulty planning ahead?', 'type': 'bool'},
+        {'id': 'scid8', 'text': 'Do you experience unstable and intense relationships with rapid mood changes?', 'type': 'bool'},
+        {'id': 'scid9', 'text': 'Do you have a pervasive pattern of detachment and limited emotional expression?', 'type': 'bool'},
+        {'id': 'scid10', 'text': 'Are you excessively devoted to work and productivity to the exclusion of leisure and friendships?', 'type': 'bool'},
+        {'id': 'scid11', 'text': 'Are you preoccupied with orderliness, perfectionism, and control?', 'type': 'bool'},
+        {'id': 'scid12', 'text': 'Do you fear being alone and go to great lengths to obtain nurturance and support from others?', 'type': 'bool'},
+        {'id': 'scid13', 'text': 'Do you have an inflated sense of self-importance and need for admiration?', 'type': 'bool'},
+        {'id': 'scid14', 'text': 'Do you frequently disregard social norms or the rights of others?', 'type': 'bool'},
+        {'id': 'scid15', 'text': 'Do you feel uncomfortable unless others take responsibility for most areas of your life?', 'type': 'bool'},
+        {'id': 'scid16', 'text': 'Do you often have odd beliefs or magical thinking that influences behavior?', 'type': 'bool'},
+        {'id': 'scid17', 'text': 'Do you often hold grudges and perceive benign remarks as attacks?', 'type': 'bool'},
+        {'id': 'scid18', 'text': 'Do you engage in self-damaging acts or have recurrent suicidal behavior?', 'type': 'bool'},
+        {'id': 'scid19', 'text': 'Do you avoid making decisions without excessive advice and reassurance?', 'type': 'bool'},
+        {'id': 'scid20', 'text': 'Are you preoccupied with fantasies of unlimited success, power, brilliance, or beauty?', 'type': 'bool'},
+        {'id': 'scid21', 'text': 'Do you have unstable self-image or sense of self?', 'type': 'bool'},
+        {'id': 'scid22', 'text': 'Do you often act in ways that are reckless or show little regard for safety?', 'type': 'bool'},
+        {'id': 'scid23', 'text': 'Do you feel constrained by rules and prefer flexibility to structure?', 'type': 'bool'},
+        {'id': 'scid24', 'text': 'Do you find it hard to discard worn-out or worthless items even with no sentimental value?', 'type': 'bool'},
+    ]
+    return items
+
+
+@assessments_bp.route('/')
+@login_required
+def assessments_index():
+    return render_template('assessments/index.html')
+
+
+@assessments_bp.route('/api/next_question', methods=['POST'])
+@login_required
+def next_question():
+    payload = request.get_json(force=True) or {}
+    instrument = payload.get('instrument', 'phq9')
+    answers = payload.get('answers', [])  # list of {id, value}
+    state = payload.get('state') or {}
+
+    if instrument not in ('phq9', 'scid5pd'):
+        return jsonify({'error': 'invalid instrument'}), 400
+
+    if instrument == 'phq9':
+        bank = _phq9_bank()
+        id_to_item = {q['id']: q for q in bank}
+        if not state.get('order'):
+            order = [q['id'] for q in bank]
+            random.shuffle(order)
+            state['order'] = order
+            state['index'] = 0
+        # Branching: if item phq9 answered > 0, schedule a safety follow-up
+        answered = {a['id']: a['value'] for a in answers}
+        if 'phq9' in answered and answered['phq9'] and not state.get('safety_added'):
+            state['safety_added'] = True
+            # insert a follow-up immediately next
+            state['order'].insert(state['index'] + 1, 'phq9_safety')
+            id_to_item['phq9_safety'] = {
+                'id': 'phq9_safety',
+                'text': 'Have you had any thoughts or plans to harm yourself in the past two weeks?',
+                'type': 'bool'
+            }
+        # Advance to next
+        while state['index'] < len(state['order']):
+            qid = state['order'][state['index']]
+            if qid not in answered:
+                item = id_to_item.get(qid)
+                state['index'] += 1
+                return jsonify({'question': item, 'state': state})
+            state['index'] += 1
+        # Completed -> score
+        score = sum(int(v) for v in answered.values() if isinstance(v, (int, float)))
+        severity = (
+            'none-minimal' if score <= 4 else
+            'mild' if score <= 9 else
+            'moderate' if score <= 14 else
+            'moderately severe' if score <= 19 else
+            'severe'
+        )
+        # persist session
+        try:
+            sess = AssessmentSession(
+                user_id=current_user.id,
+                instrument='phq9',
+                completed_at=datetime.utcnow(),
+                score=score,
+                severity=severity,
+                answers_json=json.dumps(answers),
+                state_json=json.dumps(state),
+            )
+            db.session.add(sess)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        return jsonify({'done': True, 'score': score, 'severity': severity, 'state': state})
+
+    # SCID-5-PD screening logic
+    bank = _scid5pd_bank()
+    id_to_item = {q['id']: q for q in bank}
+    if not state.get('order'):
+        # select at least 20 questions randomly
+        ids = [q['id'] for q in bank]
+        random.shuffle(ids)
+        state['order'] = ids[:max(20, len(ids))] if len(ids) >= 20 else ids
+        state['index'] = 0
+    answered = {a['id']: a['value'] for a in answers}
+
+    # Branching examples: if scid8 (borderline) yes, add follow-up on self-harm if not already asked
+    if answered.get('scid8') is True and 'scid8_follow' not in answered and not state.get('scid8_follow_added'):
+        state['scid8_follow_added'] = True
+        state['order'].insert(state['index'] + 1, 'scid8_follow')
+        id_to_item['scid8_follow'] = {
+            'id': 'scid8_follow',
+            'text': 'Have mood changes led to impulsive acts or self-harm?',
+            'type': 'bool'
+        }
+
+    # Iterate to next unanswered question
+    while state['index'] < len(state['order']):
+        qid = state['order'][state['index']]
+        if qid not in answered:
+            item = id_to_item.get(qid)
+            state['index'] += 1
+            return jsonify({'question': item, 'state': state})
+        state['index'] += 1
+
+    # Finished: return simple domain tallies
+    positive = sum(1 for k, v in answered.items() if str(k).startswith('scid') and v is True)
+    risk_flag = any(answered.get(k) for k in ('scid8_follow', 'scid18'))
+    try:
+        sess = AssessmentSession(
+            user_id=current_user.id,
+            instrument='scid5pd',
+            completed_at=datetime.utcnow(),
+            positives=positive,
+            risk_flag=risk_flag,
+            answers_json=json.dumps(answers),
+            state_json=json.dumps(state),
+        )
+        db.session.add(sess)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    return jsonify({'done': True, 'positives': positive, 'risk_flag': risk_flag, 'state': state})
+
+
+# Chatbot Blueprint
+chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
+
+
+@chat_bp.route('/')
+@login_required
+def chat_index():
+    return render_template('chat/index.html')
+
+
+@chat_bp.route('/api/message', methods=['POST'])
+@login_required
+def chat_message():
+    data = request.get_json(force=True) or {}
+    text = (data.get('text') or '').strip()
+    if not text:
+        return jsonify({'error': 'empty'}), 400
+    # Use simple analyzer placeholder
+    try:
+        from ml_services import analyze_sentiment
+        analysis = analyze_sentiment(text)
+    except Exception:
+        analysis = {'sentiment': 'neutral', 'confidence': 0.5}
+
+    sentiment = analysis.get('sentiment', 'neutral')
+
+    # --- Conversational branching helpers ---
+    def detect_topics(t: str) -> List[str]:
+        t = t.lower()
+        topics = []
+        mapping = {
+            'anxiety': ['anxious','panic','worry','racing heart','restless','nervous'],
+            'depression': ['depressed','down','hopeless','worthless','no interest','tired','fatigue'],
+            'sleep': ['sleep','insomnia','awake','tired','nightmare','can\'t sleep'],
+            'stress': ['stress','stressed','overwhelmed','pressure','burnout'],
+            'self_harm': ['suicide','kill myself','self-harm','harm myself','end my life'],
+            'substance': ['alcohol','drink too much','drugs','substance','weed','cocaine']
+        }
+        for key, kws in mapping.items():
+            if any(k in t for k in kws):
+                topics.append(key)
+        return topics or ['general']
+
+    def topic_suggestions(topic: str) -> List[str]:
+        suggestions = {
+            'anxiety': [
+                'Try box breathing: inhale 4s, hold 4s, exhale 4s, hold 4s (4 cycles).',
+                'Yoga: Child\'s Pose (Balasana) 60–90s, Seated Forward Fold (Paschimottanasana) 60s.',
+                'Grounding: Name 5 things you can see, 4 feel, 3 hear, 2 smell, 1 taste.'
+            ],
+            'depression': [
+                'Brief activation: 10–15 min walk or light stretching.',
+                'Journaling: Write 3 small tasks you can complete today.',
+                'Sleep hygiene: fixed wake time; no screens 60 min before bed.'
+            ],
+            'sleep': [
+                'Wind-down: dim lights, avoid caffeine 6h before bed.',
+                '4‑7‑8 breathing for 3–4 cycles.',
+                'Yoga: Legs Up the Wall (Viparita Karani) 2–3 min.'
+            ],
+            'stress': [
+                'Micro-break: 5 min of diaphragmatic breathing.',
+                'Time-box one task for 20 min; reduce multitasking.',
+                'Neck/shoulder release: gentle rolls for 60s.'
+            ],
+            'substance': [
+                'Delay/Distraction: wait 20 min and do a different activity.',
+                'Track triggers and plan an alternative response.',
+                'Hydrate and eat before social events to reduce cue‑reactivity.'
+            ],
+            'general': [
+                '3 deep breaths; slow your exhale.',
+                'Short walk in fresh air.',
+                'Message a supportive friend.'
+            ]
+        }
+        return suggestions.get(topic, suggestions['general'])
+
+    def topic_specialist(topic: str) -> str:
+        return {
+            'anxiety': 'Psychiatrist',
+            'depression': 'Psychiatrist',
+            'sleep': 'Sleep Medicine Psychiatrist',
+            'stress': 'Psychologist',
+            'substance': 'Addiction Psychiatrist',
+            'self_harm': 'Crisis & Psychiatry',
+            'general': 'Psychologist'
+        }.get(topic, 'Psychologist')
+
+    # Retrieve or init conversation state
+    state_key = f"chat_state_{current_user.id}"
+    state = session.get(state_key) or {'stage': 'intro', 'topic': None, 'neg_count': 0}
+
+    lowered = text.lower()
+    topics = detect_topics(lowered)
+    primary_topic = topics[0]
+
+    # Risk checks
+    risk_flag = ('self_harm' in topics)
+    strong_negative = (sentiment == 'negative' and float(analysis.get('confidence', 0.0)) >= 0.6)
+    last_phq9 = AssessmentSession.query.filter_by(user_id=current_user.id, instrument='phq9').order_by(AssessmentSession.completed_at.desc()).first()
+    last_scid = AssessmentSession.query.filter_by(user_id=current_user.id, instrument='scid5pd').order_by(AssessmentSession.completed_at.desc()).first()
+    phq_severe = bool(last_phq9 and (last_phq9.severity in ('severe','moderately severe') or (last_phq9.score or 0) >= 15))
+    scid_risk = bool(last_scid and last_scid.risk_flag)
+
+    if sentiment == 'negative':
+        state['neg_count'] = state.get('neg_count', 0) + 1
+
+    # Branching
+    quick_replies: List[str] = []
+    doctors: List[Dict[str, Any]] = []
+
+    if state['stage'] == 'intro':
+        reply = "I’m here with you. What’s troubling you most right now?"
+        quick_replies = ['Anxiety', 'Low mood', 'Sleep', 'Stress']
+        state['stage'] = 'collect'
+    elif risk_flag:
+        reply = ("It sounds like you might be at risk. If you’re in immediate danger, call your local emergency number now. "
+                 "I can also connect you to nearby professionals.")
+        state['stage'] = 'escalate'
+    elif strong_negative or state.get('neg_count', 0) >= 3 or phq_severe or scid_risk:
+        reply = ("Thanks for sharing. Given what you’ve said, I recommend speaking with a specialist. Would you like some options?")
+        state['stage'] = 'escalate'
+    else:
+        # Self‑care coaching
+        state['topic'] = state.get('topic') or primary_topic
+        tips = topic_suggestions(state['topic'])
+        reply = f"Let’s try a quick step for {state['topic']}: {tips[0]}"
+        quick_replies = ['More tips', 'Show yoga steps', 'Talk to a professional']
+        state['stage'] = 'coach'
+
+    # If escalate, suggest specialists
+    if state['stage'] == 'escalate':
+        spec = topic_specialist(primary_topic)
+        reply = reply + f" Recommended specialist: {spec}."
+        doctors = [
+            {
+                'name': 'Dr. Sarah Johnson, MD', 'specialty': 'Psychiatrist — Depression & Anxiety', 'distance': '0.5 miles', 'next_available': 'Tomorrow 2:00 PM', 'phone': '(617) 555-0123', 'address': '123 Main Street, Boston, MA'
+            },
+            {
+                'name': 'Dr. Michael Chen, MD', 'specialty': 'Child & Adolescent Psychiatry', 'distance': '1.2 miles', 'next_available': 'Today 4:00 PM', 'phone': '(617) 555-0456', 'address': '456 Oak Avenue, Cambridge, MA'
+            },
+            {
+                'name': 'Dr. Emily Rodriguez, PhD', 'specialty': 'Psychologist — Trauma & PTSD', 'distance': '2.1 miles', 'next_available': 'Next Week', 'phone': '(617) 555-0789', 'address': '789 Pine Road, Somerville, MA'
+            },
+        ]
+        quick_replies = ['Call first option', 'View all professionals']
+
+    # Save state in session
+    session[state_key] = state
+
+    # persist user and bot messages
+    try:
+        db.session.add(ChatMessage(user_id=current_user.id, role='user', text=text))
+        db.session.add(ChatMessage(user_id=current_user.id, role='bot', text=reply, sentiment=sentiment, confidence=analysis.get('confidence', 0.5)))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    return jsonify({
+        'sentiment': sentiment,
+        'confidence': analysis.get('confidence', 0.5),
+        'reply': reply,
+        'doctors': doctors,
+        'escalate': escalate,
+        'quick_replies': quick_replies,
+    })
 
 

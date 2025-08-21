@@ -49,10 +49,10 @@ def strftime_filter(value, format='%Y-%m-%d'):
         return str(value)
 
 # Import models first
-from models import User, JournalEntry, MoodEntry, Task, Goal
+from models import User, JournalEntry, MoodEntry, Task, Goal, AssessmentSession, ChatMessage
 
 # Import routes after models are initialized
-from routes import auth_bp, journal_bp, mood_bp, tasks_bp, goals_bp, ml_bp, doctors_bp
+from routes import auth_bp, journal_bp, mood_bp, tasks_bp, goals_bp, ml_bp, doctors_bp, assessments_bp, chat_bp
 
 # Register blueprints
 app.register_blueprint(auth_bp)
@@ -62,6 +62,8 @@ app.register_blueprint(tasks_bp)
 app.register_blueprint(goals_bp)
 app.register_blueprint(ml_bp)
 app.register_blueprint(doctors_bp)
+app.register_blueprint(assessments_bp)
+app.register_blueprint(chat_bp)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -101,7 +103,14 @@ def dashboard():
     
     # Generate personalized recommendations
     recommendations = generate_recommendations(current_user.id, journal_entries, mood_entries, tasks, goals)
-    
+
+    # Assessments summary
+    last_phq9 = AssessmentSession.query.filter_by(user_id=current_user.id, instrument='phq9').order_by(AssessmentSession.completed_at.desc()).first()
+    last_scid = AssessmentSession.query.filter_by(user_id=current_user.id, instrument='scid5pd').order_by(AssessmentSession.completed_at.desc()).first()
+
+    # Recent chatbot messages (bot replies)
+    recent_chat = ChatMessage.query.filter_by(user_id=current_user.id, role='bot').order_by(ChatMessage.created_at.desc()).limit(5).all()
+
     return render_template('dashboard.html', 
                          journal_entries=journal_entries,
                          mood_entries=mood_entries,
@@ -112,7 +121,10 @@ def dashboard():
                          active_tasks=active_tasks,
                          active_goals=active_goals,
                          avg_mood=round(avg_mood, 1),
-                         recommendations=recommendations)
+                         recommendations=recommendations,
+                         last_phq9=last_phq9,
+                         last_scid=last_scid,
+                         recent_chat=recent_chat)
 
 def generate_recommendations(user_id, journal_entries, mood_entries, tasks, goals):
     """Generate personalized recommendations based on user data"""
