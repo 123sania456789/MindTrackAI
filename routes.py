@@ -257,22 +257,22 @@ def search_doctors():
     mock_doctors = [
         {
             'id': 1,
-            'name': 'Dr. Sarah Johnson',
+            'name': 'Dr. Kapur B, MD',
             'specialty': 'Psychiatrist',
-            'subspecialty': 'Depression & Anxiety',
-            'distance': '0.5 miles',
+            'subspecialty': 'Depression & Schizophrenia',
+            'distance': 'Hebbal',
             'rating': 4.8,
             'review_count': 127,
-            'address': '123 Main St, City, State 12345',
-            'phone': '(555) 123-4567',
-            'email': 'dr.johnson@example.com',
+            'address': 'Hebbal, Manipal Hospital, Bangalore, Karnataka 560036',
+            'phone': '8046808476',
+            'email': 'NA',
             'available': True,
-            'next_available': 'Tomorrow 2:00 PM',
+            'next_available': 'Visit Website',
             'accepts_insurance': True,
-            'languages': ['English', 'Spanish'],
-            'years_experience': 15,
-            'education': 'Harvard Medical School',
-            'certifications': ['Board Certified Psychiatrist', 'Fellow of American Psychiatric Association']
+            'languages': ['English', 'Hindi', 'Punjabi'],
+            'years_experience': 47,
+            'education': 'AFMC, PUNE',
+            'certifications': ['Board Certified in Psychiatry', 'Fellow of American Psychiatric Association']
         },
         {
             'id': 2,
