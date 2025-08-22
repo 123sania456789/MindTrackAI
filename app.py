@@ -16,14 +16,19 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///mindtrack_ai.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# JWT Configuration
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-jwt-secret-key-here')
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # 1 hour
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 2592000  # 30 days
+
 # Import extensions
-from extensions import db, migrate, login_manager, cors
+from extensions import db, migrate, login_manager, jwt
 
 # Initialize extensions with app
 db.init_app(app)
 migrate.init_app(app, db)
 login_manager.init_app(app)
-cors.init_app(app)
+jwt.init_app(app)
 
 # Custom Jinja2 filters
 @app.template_filter('from_json')

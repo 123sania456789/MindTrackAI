@@ -3,8 +3,8 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=development
+ENV FLASK_APP=start.py
+ENV FLASK_ENV=production
 
 # Set work directory
 WORKDIR /app
@@ -28,16 +28,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN python -m spacy download en_core_web_sm
 
 # Download NLTK data
-RUN python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
+RUN python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords'); nltk.download('vader_lexicon')"
 
 # Copy project
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p logs models
+RUN mkdir -p logs models instance
 
 # Set permissions
-RUN chmod +x /app/app.py
+RUN chmod +x /app/start.py
 
 # Expose port
 EXPOSE 5000
@@ -46,18 +46,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
-# Run the application
-CMD ["python", "app.py"]
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Run the application using the proper startup script
+CMD ["python", "start.py"]

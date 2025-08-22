@@ -87,7 +87,11 @@ $(document).ready(function() {
                 
                 // Redirect to dashboard after a short delay
                 setTimeout(function() {
-                    window.location.href = '{{ url_for("dashboard") }}';
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else {
+                        window.location.href = '{{ url_for("dashboard") }}';
+                    }
                 }, 1500);
             },
             error: function(xhr) {

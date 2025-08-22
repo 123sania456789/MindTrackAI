@@ -1,6 +1,7 @@
 from extensions import db
 from flask_login import UserMixin
 from datetime import datetime, timezone
+from werkzeug.security import generate_password_hash, check_password_hash
 # Using SQLite instead of PostgreSQL
 
 class User(UserMixin, db.Model):
@@ -19,6 +20,14 @@ class User(UserMixin, db.Model):
     mood_entries = db.relationship('MoodEntry', backref='user', lazy=True)
     tasks = db.relationship('Task', backref='user', lazy=True)
     goals = db.relationship('Goal', backref='user', lazy=True)
+    
+    def set_password(self, password):
+        """Set password hash"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """Check password against hash"""
+        return check_password_hash(self.password_hash, password)
 
 class JournalEntry(db.Model):
     __tablename__ = 'journal_entries'

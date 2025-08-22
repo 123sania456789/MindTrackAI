@@ -1,67 +1,154 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
-from flask_login import login_required, current_user, login_user, logout_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from extensions import db
-from models import User, JournalEntry, MoodEntry, Task, Goal, AssessmentSession, ChatMessage
-from datetime import datetime
-import jwt
-from functools import wraps
-import json
+from flask_login import login_user, logout_user, login_required, current_user
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, create_refresh_token
+from models import db, User, JournalEntry, MoodEntry, Task, Goal, AssessmentSession, ChatMessage
+from datetime import datetime, timezone
 import random
 from typing import Dict, Any, List
+import json
 
 # Authentication Blueprint
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    """User registration"""
     if request.method == 'POST':
-        data = request.get_json()
+        data = request.form
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
         
+        if not all([username, email, password]):
+            flash('All fields are required', 'error')
+            return redirect(url_for('auth.register'))
+        
+        # Check if user already exists
         if User.query.filter_by(username=username).first():
-            return jsonify({'error': 'Username already exists'}), 400
+            flash('Username already exists', 'error')
+            return redirect(url_for('auth.register'))
         
         if User.query.filter_by(email=email).first():
-            return jsonify({'error': 'Email already registered'}), 400
+            flash('Email already registered', 'error')
+            return redirect(url_for('auth.register'))
         
-        user = User(
-            username=username,
-            email=email,
-            password_hash=generate_password_hash(password)
-        )
-        db.session.add(user)
-        db.session.commit()
+        # Create new user
+        user = User(username=username, email=email)
+        user.set_password(password)
         
-        return jsonify({'message': 'User registered successfully'}), 201
+        try:
+            db.session.add(user)
+            db.session.commit()
+            flash('Registration successful! Please login.', 'success')
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'error')
+            return redirect(url_for('auth.register'))
     
     return render_template('register.html')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """User login"""
     if request.method == 'POST':
-        data = request.get_json()
+        # Handle both form data and JSON data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form
+            
         username = data.get('username')
         password = data.get('password')
         
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password_hash, password):
-            login_user(user)
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-            return jsonify({'message': 'Login successful'}), 200
+        if not all([username, password]):
+            if request.is_json:
+                return jsonify({'error': 'Username and password are required'}), 400
+            else:
+                flash('Username and password are required', 'error')
+                return redirect(url_for('auth.login'))
         
-        return jsonify({'error': 'Invalid credentials'}), 401
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            if request.is_json:
+                return jsonify({'message': 'Login successful!', 'redirect': url_for('dashboard')})
+            else:
+                flash('Login successful!', 'success')
+                return redirect(url_for('dashboard'))
+        else:
+            if request.is_json:
+                return jsonify({'error': 'Invalid username or password'}), 401
+            else:
+                flash('Invalid username or password', 'error')
+                return redirect(url_for('auth.login'))
     
     return render_template('login.html')
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    """User logout"""
     logout_user()
+    flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
+
+# JWT Authentication endpoints
+@auth_bp.route('/api/login', methods=['POST'])
+def api_login():
+    """API login endpoint returning JWT tokens"""
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not all([username, password]):
+        return jsonify({'error': 'Username and password required'}), 400
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if user and user.check_password(password):
+        
+        access_token = create_access_token(identity=user.id)
+        refresh_token = create_refresh_token(identity=user.id)
+        
+        return jsonify({
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email
+            }
+        })
+    else:
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+@auth_bp.route('/api/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def api_refresh():
+    """Refresh JWT access token"""
+    current_user_id = get_jwt_identity()
+    new_access_token = create_access_token(identity=current_user_id)
+    
+    return jsonify({'access_token': new_access_token})
+
+@auth_bp.route('/api/profile')
+@jwt_required()
+def api_profile():
+    """Get user profile using JWT"""
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'created_at': user.created_at.isoformat()
+    })
 
 # Journal Blueprint
 journal_bp = Blueprint('journal', __name__, url_prefix='/journal')
@@ -204,38 +291,162 @@ ml_bp = Blueprint('ml', __name__, url_prefix='/ml')
 
 @ml_bp.route('/insights')
 @login_required
-def insights():
-    # Get user's data for insights
-    journal_entries = JournalEntry.query.filter_by(user_id=current_user.id).all()
-    mood_entries = MoodEntry.query.filter_by(user_id=current_user.id).all()
+def ml_insights():
+    """Show ML insights and model performance"""
+    # Get user's journal entries for analysis
+    journal_entries = JournalEntry.query.filter_by(user_id=current_user.id).order_by(JournalEntry.created_at.desc()).limit(50).all()
     
-    # Calculate basic statistics
+    # Get mood entries
+    mood_entries = MoodEntry.query.filter_by(user_id=current_user.id).order_by(MoodEntry.created_at.desc()).limit(30).all()
+    
+    # Calculate basic insights
     total_entries = len(journal_entries)
     avg_mood = sum(entry.mood_score for entry in mood_entries) / len(mood_entries) if mood_entries else 0
     
-    return render_template('ml/insights.html', 
-                         total_entries=total_entries,
-                         avg_mood=avg_mood,
+    # Get model performance
+    from ml_services import get_model_performance
+    model_performance = get_model_performance()
+    
+    return render_template('ml/insights.html',
                          journal_entries=journal_entries,
-                         mood_entries=mood_entries)
+                         mood_entries=mood_entries,
+                         total_entries=total_entries,
+                         avg_mood=round(avg_mood, 1),
+                         model_performance=model_performance)
 
 @ml_bp.route('/sentiment_analysis', methods=['POST'])
 @login_required
 def sentiment_analysis():
+    """Analyze sentiment of text using ML models"""
     data = request.get_json()
     text = data.get('text', '')
     
     if not text:
         return jsonify({'error': 'No text provided'}), 400
     
+    # Use enhanced ML service
+    from ml_services import analyze_sentiment, preprocess_text, extract_topics
+    
+    # Basic sentiment analysis
+    sentiment_result = analyze_sentiment(text)
+    
+    # Preprocessing
+    processed_text = preprocess_text(text)
+    
+    # Topic extraction
+    topics = extract_topics(processed_text)
+    
     # Simple sentiment analysis (placeholder for ML service)
     result = {
-        'sentiment': 'neutral',
-        'confidence': 0.5,
-        'text': text
+        'sentiment': sentiment_result['sentiment'],
+        'confidence': sentiment_result['confidence'],
+        'text': text,
+        'processed_text': processed_text,
+        'topics': topics,
+        'features': {
+            'text_length': len(text),
+            'word_count': len(text.split()),
+            'processed_length': len(processed_text.split())
+        }
     }
     
     return jsonify(result)
+
+@ml_bp.route('/train_model', methods=['POST'])
+@login_required
+def train_ml_model():
+    """Train the baseline ML model with sample data"""
+    try:
+        from ml_services import train_sample_model
+        result = train_sample_model()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@ml_bp.route('/model_performance')
+@login_required
+def get_ml_performance():
+    """Get current ML model performance metrics"""
+    try:
+        from ml_services import get_model_performance, baseline_model
+        
+        # Try to get performance if model exists
+        try:
+            baseline_model.load_model()
+            # Model exists, get actual performance
+            performance = {
+                'status': 'Model loaded successfully',
+                'message': 'Model is ready for predictions',
+                'model_info': {
+                    'type': 'TF-IDF + Random Forest',
+                    'features': '5000 TF-IDF features',
+                    'algorithm': 'Random Forest (100 estimators)'
+                }
+            }
+        except:
+            performance = get_model_performance()
+            
+        return jsonify(performance)
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@ml_bp.route('/predict', methods=['POST'])
+@login_required
+def ml_predict():
+    """Make prediction using trained ML model"""
+    data = request.get_json()
+    text = data.get('text', '')
+    
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+    
+    try:
+        from ml_services import baseline_model
+        
+        # Make prediction
+        prediction = baseline_model.predict(text)
+        
+        return jsonify({
+            'status': 'success',
+            'prediction': prediction,
+            'text': text
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Prediction failed: {str(e)}',
+            'suggestion': 'Train the model first using /train_model endpoint'
+        }), 500
+
+@ml_bp.route('/preprocess', methods=['POST'])
+@login_required
+def preprocess_text():
+    """Preprocess text using the full pipeline"""
+    data = request.get_json()
+    text = data.get('text', '')
+    
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+    
+    try:
+        from ml_services import preprocess_text, extract_topics
+        
+        # Apply preprocessing
+        processed = preprocess_text(text)
+        topics = extract_topics(processed)
+        
+        return jsonify({
+            'original_text': text,
+            'processed_text': processed,
+            'topics': topics,
+            'features': {
+                'original_length': len(text),
+                'processed_length': len(processed),
+                'word_reduction': len(text.split()) - len(processed.split())
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Doctor Recommendations Blueprint
 doctors_bp = Blueprint('doctors', __name__, url_prefix='/doctors')
